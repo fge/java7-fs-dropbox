@@ -1,11 +1,13 @@
 package com.github.fge.fs.dropbox.misc;
 
 import com.dropbox.core.DbxClient;
+import com.dropbox.core.DbxException;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Wrapper over {@link DbxClient.Uploader} extending {@link OutputStream}
@@ -30,6 +32,8 @@ import java.util.Objects;
 public final class DropBoxOutputStream
     extends OutputStream
 {
+    private final AtomicBoolean closeCalled = new AtomicBoolean(false);
+
     private final DbxClient.Uploader uploader;
     private final OutputStream out;
 
@@ -142,20 +146,53 @@ public final class DropBoxOutputStream
     public void close()
         throws IOException
     {
+        /*
+         * Reentrancy: check if .close() has been called already...
+         */
+        if (closeCalled.getAndSet(true))
+            return;
+
+        /*
+         * TODO: UGLY! Tied to the API in a big, big way
+         */
         IOException exception = null;
+        boolean finishedOK = true;
+
+        /*
+         * First try and close the stream
+         */
         try {
             out.close();
         } catch (IOException e) {
             exception = e;
         }
 
+        /*
+         * First, .finish() the transaction; if this throws an exception, wrap
+         * it in either the exception thrown by the OutputStream, or a new
+         * DropBoxIOException if the stream was OK.
+         */
+
+        try {
+            uploader.finish();
+        } catch (DbxException e) {
+            finishedOK = false;
+            if (exception == null)
+                exception = new DropBoxIOException(e);
+            else
+                exception.addSuppressed(e);
+        }
+
+        /*
+         * Now try and .close(). If the finish stage was OK, ignore; if not,
+         * suppress the returned exception (we always have a nonnull exception).
+         */
+
         try {
             uploader.close();
         } catch (RuntimeException e) {
-            if (exception != null)
+            if (!finishedOK)
                 exception.addSuppressed(e);
-            else
-                exception = new IOException("tell me what to do, please", e);
         }
 
         if (exception != null)
