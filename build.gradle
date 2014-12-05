@@ -46,7 +46,7 @@ apply(plugin: "info.solidsoft.pitest");
 
 group = "com.github.fge";
 version = "0.0.1-SNAPSHOT";
-description = "Helper classes for FileSystem implementations";
+description = "FileSystem implementation over DropBox";
 sourceCompatibility = "1.7";
 targetCompatibility = "1.7"; // defaults to sourceCompatibility
 
@@ -79,15 +79,6 @@ javadoc.options.links("http://dropbox.github.io/dropbox-sdk-java/api-docs/v1.7.x
 repositories {
     mavenCentral();
     mavenLocal();
-}
-
-/*
- * Necessary for using sun.nio.fs.Globs...
- */
-compileJava {
-    options.compilerArgs += "-XDignore.symbol.file";
-    options.fork = true;
-    options.forkOptions.executable = "javac";
 }
 
 /*
