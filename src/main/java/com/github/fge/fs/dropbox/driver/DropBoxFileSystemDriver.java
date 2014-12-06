@@ -137,10 +137,7 @@ public final class DropBoxFileSystemDriver
             throw new DropBoxIOException(e);
         }
 
-        if (entry == null) {
-            if (!opts.contains(StandardOpenOption.CREATE))
-                throw new NoSuchFileException(target);
-        } else {
+        if (entry != null) {
             if (opts.contains(StandardOpenOption.CREATE_NEW))
                 throw new FileAlreadyExistsException(target);
             if (entry.isFolder())
