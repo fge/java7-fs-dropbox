@@ -555,11 +555,7 @@ public final class DropBoxFileSystemDriver
     public void close()
         throws IOException
     {
-        try {
-            client.disableAccessToken();
-        } catch (DbxException e) {
-            throw new DropBoxIOException(e);
-        }
+        // TODO: what to do here? DbxClient does not implement Closeable :(
     }
 
     // TODO: make FileSystemProviderBase do that
