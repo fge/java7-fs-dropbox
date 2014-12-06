@@ -8,6 +8,7 @@ import com.github.fge.filesystem.driver.UnixLikeFileSystemDriverBase;
 import com.github.fge.filesystem.exceptions.IsDirectoryException;
 import com.github.fge.filesystem.fs.GenericFileSystem;
 import com.github.fge.filesystem.path.GenericPath;
+import com.github.fge.fs.dropbox.attr.DropBoxFileAttributes;
 import com.github.fge.fs.dropbox.filestore.DropBoxFileStore;
 import com.github.fge.fs.dropbox.misc.DropBoxIOException;
 import com.github.fge.fs.dropbox.misc.DropBoxInputStream;
@@ -454,6 +455,9 @@ public final class DropBoxFileSystemDriver
         final Class<V> type, final LinkOption... options)
     {
         // TODO!
+        if (options.length != 0)
+            throw new UnsupportedOperationException();
+        // TODO!
         return null;
     }
 
@@ -474,7 +478,22 @@ public final class DropBoxFileSystemDriver
         final Class<A> type, final LinkOption... options)
         throws IOException
     {
-        return null;
+        // TODO!
+        if (options.length != 0)
+            throw new UnsupportedOperationException();
+        if (type != BasicFileAttributes.class)
+            throw new UnsupportedOperationException();
+
+        final String target = path.toRealPath().toString();
+        final DbxEntry entry;
+
+        try {
+            entry = client.getMetadata(target);
+        } catch (DbxException e) {
+            throw new DropBoxIOException(e);
+        }
+
+        return type.cast(new DropBoxFileAttributes(entry));
     }
 
     /**
@@ -498,7 +517,8 @@ public final class DropBoxFileSystemDriver
         final String attributes, final LinkOption... options)
         throws IOException
     {
-        return null;
+        // TODO!
+        throw new UnsupportedOperationException();
     }
 
     /**
@@ -523,7 +543,8 @@ public final class DropBoxFileSystemDriver
         final Object value, final LinkOption... options)
         throws IOException
     {
-
+        // TODO!
+        throw new UnsupportedOperationException();
     }
 
     /**
