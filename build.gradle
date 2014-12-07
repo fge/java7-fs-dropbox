@@ -51,6 +51,14 @@ sourceCompatibility = "1.7";
 targetCompatibility = "1.7"; // defaults to sourceCompatibility
 
 /*
+ * Repositories to use
+ */
+repositories {
+    mavenCentral();
+    mavenLocal();
+}
+
+/*
  * List of dependencies
  */
 dependencies {
@@ -72,14 +80,6 @@ dependencies {
 javadoc.options.links("http://docs.oracle.com/javase/7/docs/api/");
 javadoc.options.links("http://jsr-305.googlecode.com/svn/trunk/javadoc/");
 javadoc.options.links("http://dropbox.github.io/dropbox-sdk-java/api-docs/v1.7.x/");
-
-/*
- * Repositories to use
- */
-repositories {
-    mavenCentral();
-    mavenLocal();
-}
 
 /*
  * Necessary! Otherwise TestNG will not be used...
