@@ -15,6 +15,14 @@ It works! However, its
 [`FileSystemProvider`](https://docs.oracle.com/javase/7/docs/api/java/nio/file/FileSystemProvider.html)
 is not yet registered to the VM, so creating a new filesystem requires a bit of code, see below.
 
+There are limitations:
+
+* opening in append mode is not supported (it is unclear whether the dropbox API supports this);
+* no metadata is available other than the basic file attributes; no owner, nothing like that;
+* other, various stuff... The code is filled with TODOs ;)
+* configuration is ultra simple and minimalistic -- in fact you cannot even open a read-only
+  `FileSystem` at this moment.
+
 ## How to build
 
 You first need to clone [java7-fs-base](https://github.com/fge/java7-fs-base) and install it in your
