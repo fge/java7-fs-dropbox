@@ -9,31 +9,21 @@ This is an implementation of a Java 7
 [`FileSystem`](https://docs.oracle.com/javase/7/docs/api/java/nio/file/FileSystem.html) over
 [DropBox](https://dropbox.com).
 
-## Status
+## Version, status
 
-It works! However, its
+The current version is **0.0.1**. Let that not scare you however, since basically...
+
+It works! And it is available on maven: `com.github.fge:java7-fs-dropbox:0.0.1`.
+
+There are of course a few limitations:
+
+* its
 [`FileSystemProvider`](https://docs.oracle.com/javase/7/docs/api/java/nio/file/FileSystemProvider.html)
-is not yet registered to the VM, so creating a new filesystem requires a bit of code, see below.
-
-There are limitations:
-
+is not yet registered to the VM, so creating a new filesystem requires a bit of code, see below;
+* no metadata attributes are supported behind the basic ones; attributes cannot be overriden either;
 * opening in append mode is not supported (it is unclear whether the dropbox API supports this);
-* no metadata is available other than the basic file attributes; no owner, nothing like that;
-* other, various stuff... The code is filled with TODOs ;)
 * configuration is ultra simple and minimalistic -- in fact you cannot even open a read-only
   `FileSystem` at this moment.
-
-## How to build
-
-You first need to clone [java7-fs-base](https://github.com/fge/java7-fs-base) and install it in your
-local Maven repository:
-
-```
-./gradlew --recompile-scripts clean test install
-```
-
-Once this is done, clone this package, open it with your favorite IDE (which must support Gradle)
-and build it.
 
 ## Usage
 
