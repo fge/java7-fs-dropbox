@@ -27,12 +27,12 @@ is not yet registered to the VM, so creating a new filesystem requires a bit of 
 
 ## Usage
 
-First of all, you MUST have a Dropbox account.  Then you need to [register an
-application](https://www.dropbox.com/developers/apps).  This application must have **full access**,
+First of all, you MUST have a Dropbox account. Then you need to [register an
+application](https://www.dropbox.com/developers/apps). This application must have **full access**,
 and handle any types of files.
 
 When this is done, you need to generate an OAuth 2 access token (this is also done on the apps page, however
-you can also generate one programmatically in theory -- if you know how, tell me!).  The way you store
+you can also generate one programmatically in theory -- if you know how, tell me!). The way you store
 this access token is entirely dependent upon you, but **do not share it publicly!!**
 
 Then write your code! Here is a short example (imports omitted for brevity):
@@ -80,7 +80,7 @@ public final class Main
              * And use it! You should of course adapt this code...
              */
             // Equivalent to FileSystems.getDefault().getPath(...)
-            final Path src = Paths.get("Example3.java");
+            final Path src = Paths.get(System.getProperty("user.home"), "Example3.java");
             // Here we create a path for our DropBox fs...
             final Path dst = dropboxfs.getPath("/Example3.java");
             // Here we copy the file from our local fs to dropbox!
