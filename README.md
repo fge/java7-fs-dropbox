@@ -13,29 +13,29 @@ This is an implementation of a Java 7
 
 The current version is **0.0.1**. Let that not scare you however, since basically...
 
-It works! And it is available on maven: `com.github.fge:java7-fs-dropbox:0.0.1`.
+It works! And it is available on Maven: `com.github.fge:java7-fs-dropbox:0.0.1`.
 
 There are of course a few limitations:
 
-* its
+* Its
 [`FileSystemProvider`](https://docs.oracle.com/javase/7/docs/api/java/nio/file/FileSystemProvider.html)
-is not yet registered to the VM, so creating a new filesystem requires a bit of code, see below;
-* no metadata attributes are supported behind the basic ones; attributes cannot be overriden either;
-* opening in append mode is not supported (it is unclear whether the dropbox API supports this);
-* configuration is ultra simple and minimalistic -- in fact you cannot even open a read-only
+is not yet registered to the VM, so creating a new filesystem requires a bit of code (see code example below).
+* No metadata attributes are supported behind the basic ones; attributes cannot be overridden either.
+* Opening in append mode is not supported (it is unclear whether the Dropbox API supports this).
+* Configuration is ultra simple and minimalistic -- in fact you cannot even open a read-only
   `FileSystem` at this moment.
 
 ## Usage
 
-First of all, you MUST have a DropBox account; then you need to [register an
-application](https://www.dropbox.com/developers/apps); this application must have **full access**,
+First of all, you MUST have a Dropbox account.  Then you need to [register an
+application](https://www.dropbox.com/developers/apps).  This application must have **full access**,
 and handle any types of files.
 
-When this is done, you need to generate an access token (this is also done on the apps page, however
-you can also generate one programatically in theory -- if you know how, tell me!); the way you store
+When this is done, you need to generate an OAuth 2 access token (this is also done on the apps page, however
+you can also generate one programmatically in theory -- if you know how, tell me!).  The way you store
 this access token is entirely dependent upon you, but **do not share it publicly!!**
 
-Then write your code! Here is a short example (imports ommitted for brevity)
+Then write your code! Here is a short example (imports omitted for brevity):
 
 ```java
 public final class Main
@@ -80,8 +80,7 @@ public final class Main
              * And use it! You should of course adapt this code...
              */
             // Equivalent to FileSystems.getDefault().getPath(...)
-            final Path src = Paths.get(System.getProperty("user.home"),
-                "Example3.java");
+            final Path src = Paths.get("Example3.java");
             // Here we create a path for our DropBox fs...
             final Path dst = dropboxfs.getPath("/Example3.java");
             // Here we copy the file from our local fs to dropbox!
