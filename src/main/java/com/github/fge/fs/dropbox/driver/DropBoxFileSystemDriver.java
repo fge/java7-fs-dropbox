@@ -317,10 +317,9 @@ public final class DropBoxFileSystemDriver
             = opts.contains(StandardCopyOption.REPLACE_EXISTING);
 
         if (dstentry != null) {
-        	if (!replace){
+        	if (!replace)
         		throw new FileAlreadyExistsException(dstpath);
-        	}
-        	
+
             if (dstentry.entry.isFolder() && !dstentry.children.isEmpty())
                 throw new DirectoryNotEmptyException(dstpath);
             // TODO: unknown what happens when a copy operation is performed
@@ -380,9 +379,8 @@ public final class DropBoxFileSystemDriver
             = opts.contains(StandardCopyOption.REPLACE_EXISTING);
 
         if (dstentry != null) {
-        	if (!replace){
+        	if (!replace)
         		throw new FileAlreadyExistsException(dstpath);
-        	}
 
             if (dstentry.entry.isFolder() && !dstentry.children.isEmpty())
                 throw new DirectoryNotEmptyException(dstpath);
