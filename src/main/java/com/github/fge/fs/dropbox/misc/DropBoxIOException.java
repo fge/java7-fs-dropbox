@@ -22,11 +22,11 @@ import java.io.IOException;
  * @see DropBoxInputStream
  * @see DropBoxOutputStream
  */
-@SuppressWarnings("UnusedDeclaration")
+@SuppressWarnings({ "UnusedDeclaration", "serial" })
 public final class DropBoxIOException
     extends IOException
 {
-    /**
+	/**
      * Constructs an {@code IOException} with {@code null}
      * as its error detail message.
      */
