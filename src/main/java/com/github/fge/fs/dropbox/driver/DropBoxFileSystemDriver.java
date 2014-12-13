@@ -317,18 +317,18 @@ public final class DropBoxFileSystemDriver
             = opts.contains(StandardCopyOption.REPLACE_EXISTING);
 
         if (dstentry != null) {
-            if (replace) {
-                if (dstentry.entry.isFolder() && !dstentry.children.isEmpty())
-                    throw new DirectoryNotEmptyException(dstpath);
-                // TODO: unknown what happens when a copy operation is performed
-                // and the target already exists
-                try {
-                    client.delete(dstpath);
-                } catch (DbxException e) {
-                    throw new DropBoxIOException(e);
-                }
-            } else {
-                throw new FileAlreadyExistsException(dstpath);
+        	if (!replace){
+        		throw new FileAlreadyExistsException(dstpath);
+        	}
+        	
+            if (dstentry.entry.isFolder() && !dstentry.children.isEmpty())
+                throw new DirectoryNotEmptyException(dstpath);
+            // TODO: unknown what happens when a copy operation is performed
+            // and the target already exists
+            try {
+                client.delete(dstpath);
+            } catch (DbxException e) {
+                throw new DropBoxIOException(e);
             }
         }
 
@@ -380,18 +380,18 @@ public final class DropBoxFileSystemDriver
             = opts.contains(StandardCopyOption.REPLACE_EXISTING);
 
         if (dstentry != null) {
-            if (replace) {
-                if (dstentry.entry.isFolder() && !dstentry.children.isEmpty())
-                    throw new DirectoryNotEmptyException(dstpath);
-                // TODO: unknown what happens when a move operation is performed
-                // and the target already exists
-                try {
-                    client.delete(dstpath);
-                } catch (DbxException e) {
-                    throw new DropBoxIOException(e);
-                }
-            } else {
-                throw new FileAlreadyExistsException(dstpath);
+        	if (!replace){
+        		throw new FileAlreadyExistsException(dstpath);
+        	}
+
+            if (dstentry.entry.isFolder() && !dstentry.children.isEmpty())
+                throw new DirectoryNotEmptyException(dstpath);
+            // TODO: unknown what happens when a move operation is performed
+            // and the target already exists
+            try {
+                client.delete(dstpath);
+            } catch (DbxException e) {
+                throw new DropBoxIOException(e);
             }
         }
 
