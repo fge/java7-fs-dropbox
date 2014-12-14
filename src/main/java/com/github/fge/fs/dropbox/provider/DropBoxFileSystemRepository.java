@@ -4,7 +4,9 @@ import com.dropbox.core.DbxClient;
 import com.dropbox.core.DbxRequestConfig;
 import com.github.fge.filesystem.driver.FileSystemDriver;
 import com.github.fge.filesystem.provider.FileSystemRepositoryBase;
+import com.github.fge.fs.dropbox.attr.DropBoxFileAttributesFactory;
 import com.github.fge.fs.dropbox.driver.DropBoxFileSystemDriver;
+import com.github.fge.fs.dropbox.filestore.DropBoxFileStore;
 
 import javax.annotation.Nonnull;
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -37,6 +39,10 @@ public final class DropBoxFileSystemRepository
 
         final DbxRequestConfig config = new DbxRequestConfig(NAME, LOCALE);
         final DbxClient client = new DbxClient(config, accessToken);
-        return new DropBoxFileSystemDriver(uri, client);
+        final DropBoxFileAttributesFactory factory
+            = new DropBoxFileAttributesFactory();
+        final DropBoxFileStore fileStore
+            = new DropBoxFileStore(client, factory);
+        return new DropBoxFileSystemDriver(uri, fileStore, factory, client);
     }
 }

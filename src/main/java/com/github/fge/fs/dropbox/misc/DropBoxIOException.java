@@ -1,6 +1,7 @@
 package com.github.fge.fs.dropbox.misc;
 
 import com.dropbox.core.DbxClient;
+import com.dropbox.core.DbxException;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -26,6 +27,11 @@ import java.io.IOException;
 public final class DropBoxIOException
     extends IOException
 {
+    public static DropBoxIOException wrap(final DbxException e)
+    {
+        return new DropBoxIOException("Dropbox API error", e);
+    }
+
 	/**
      * Constructs an {@code IOException} with {@code null}
      * as its error detail message.

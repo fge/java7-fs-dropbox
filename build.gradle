@@ -45,7 +45,7 @@ apply(plugin: "propdeps-eclipse");
 apply(plugin: "info.solidsoft.pitest");
 
 group = "com.github.fge";
-version = "0.0.1";
+version = "0.0.2-SNAPSHOT";
 description = "FileSystem implementation over DropBox";
 sourceCompatibility = "1.7";
 targetCompatibility = "1.7"; // defaults to sourceCompatibility
@@ -63,7 +63,7 @@ repositories {
  */
 dependencies {
     compile(group: "com.github.fge", name: "java7-fs-base",
-        version: "0.0.1");
+        version: "0.0.2-SNAPSHOT");
     compile(group: "com.dropbox.core", name: "dropbox-core-sdk",
         version: "1.7.7");
     provided(group: "com.google.code.findbugs", name: "jsr305",

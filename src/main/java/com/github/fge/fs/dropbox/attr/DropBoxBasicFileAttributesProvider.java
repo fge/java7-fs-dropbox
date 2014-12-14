@@ -1,10 +1,10 @@
 package com.github.fge.fs.dropbox.attr;
 
 import com.dropbox.core.DbxEntry;
-import com.github.fge.filesystem.attrs.BasicFileAttributesBase;
+import com.github.fge.filesystem.attributes.provider.BasicFileAttributesProvider;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import java.io.IOException;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.util.Objects;
@@ -17,13 +17,13 @@ import java.util.Objects;
  * which there is no support will return  Unix's epoch (that is, Jan 1st, 1970
  * at 00:00:00 GMT).</p>
  */
-public final class DropBoxFileAttributes
-    extends BasicFileAttributesBase
+public final class DropBoxBasicFileAttributesProvider
+    extends BasicFileAttributesProvider
 {
-    @Nullable
     private final DbxEntry.File fileEntry;
 
-    public DropBoxFileAttributes(@Nonnull final DbxEntry entry)
+    public DropBoxBasicFileAttributesProvider(@Nonnull final DbxEntry entry)
+        throws IOException
     {
         fileEntry = Objects.requireNonNull(entry).isFolder()
             ? entry.asFile() : null;
