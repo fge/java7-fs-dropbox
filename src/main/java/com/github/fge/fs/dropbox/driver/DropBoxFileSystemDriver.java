@@ -16,7 +16,6 @@ import javax.annotation.ParametersAreNonnullByDefault;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.URI;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.AccessMode;
 import java.nio.file.CopyOption;
@@ -48,10 +47,10 @@ public final class DropBoxFileSystemDriver
 {
     private final DbxClient client;
 
-    public DropBoxFileSystemDriver(final URI uri, final FileStore fileStore,
+    public DropBoxFileSystemDriver(final FileStore fileStore,
         final FileAttributesFactory factory, final DbxClient client)
     {
-        super(uri, fileStore, factory);
+        super(fileStore, factory);
         this.client = client;
     }
 

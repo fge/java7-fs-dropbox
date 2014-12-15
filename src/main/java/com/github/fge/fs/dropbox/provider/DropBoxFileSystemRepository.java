@@ -43,6 +43,6 @@ public final class DropBoxFileSystemRepository
             = new DropBoxFileAttributesFactory();
         final DropBoxFileStore fileStore
             = new DropBoxFileStore(client, factory);
-        return new DropBoxFileSystemDriver(uri, fileStore, factory, client);
+        return new DropBoxFileSystemDriver(fileStore, factory, client);
     }
 }
