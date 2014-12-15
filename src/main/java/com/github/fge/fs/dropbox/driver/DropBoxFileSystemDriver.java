@@ -4,9 +4,9 @@ import com.dropbox.core.DbxClient;
 import com.dropbox.core.DbxEntry;
 import com.dropbox.core.DbxException;
 import com.dropbox.core.DbxWriteMode;
-import com.github.fge.filesystem.attributes.FileAttributesFactory;
 import com.github.fge.filesystem.driver.UnixLikeFileSystemDriverBase;
 import com.github.fge.filesystem.exceptions.IsDirectoryException;
+import com.github.fge.filesystem.provider.FileSystemFactoryProvider;
 import com.github.fge.fs.dropbox.misc.DropBoxIOException;
 import com.github.fge.fs.dropbox.misc.DropBoxInputStream;
 import com.github.fge.fs.dropbox.misc.DropBoxOutputStream;
@@ -48,9 +48,10 @@ public final class DropBoxFileSystemDriver
     private final DbxClient client;
 
     public DropBoxFileSystemDriver(final FileStore fileStore,
-        final FileAttributesFactory factory, final DbxClient client)
+        final FileSystemFactoryProvider factoryProvider,
+        final DbxClient client)
     {
-        super(fileStore, factory);
+        super(fileStore, factoryProvider);
         this.client = client;
     }
 
