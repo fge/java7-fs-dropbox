@@ -9,21 +9,17 @@ This is an implementation of a Java 7
 [`FileSystem`](https://docs.oracle.com/javase/7/docs/api/java/nio/file/FileSystem.html) over
 [DropBox](https://dropbox.com).
 
-## Version, status
+## Status
 
-The current version is **0.0.1**. Let that not scare you however, since basically...
+There _is_ one published version, and that is 0.0.1. You can do basic filesystem
+operations with it, copy, delete etc; however, it is already obsolete.
 
-It works! And it is available on Maven: `com.github.fge:java7-fs-dropbox:0.0.1`.
+This `FileSystem` implementation bases itself upon
+[java7-fs-base](https://github.com/fge/java7-fs-base), which is rapidly evolving. As such, you want
+to have both in order to see the latest and greatest!
 
-There are of course a few limitations:
-
-* Its
-[`FileSystemProvider`](https://docs.oracle.com/javase/7/docs/api/java/nio/file/FileSystemProvider.html)
-is not yet registered to the VM, so creating a new filesystem requires a bit of code (see code example below).
-* No metadata attributes are supported behind the basic ones; attributes cannot be overridden either.
-* Opening in append mode is not supported (it is unclear whether the Dropbox API supports this).
-* Configuration is ultra simple and minimalistic -- in fact you cannot even open a read-only
-  `FileSystem` at this moment.
+The above means that the codebase is changing quickly; and given the current versioning, the API is
+anything but stable, but progressing towards a stable state!
 
 ## Usage
 
