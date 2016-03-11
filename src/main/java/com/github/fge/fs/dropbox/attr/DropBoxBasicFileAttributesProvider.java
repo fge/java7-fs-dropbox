@@ -1,13 +1,21 @@
 package com.github.fge.fs.dropbox.attr;
 
-import com.dropbox.core.DbxEntry;
-import com.github.fge.filesystem.attributes.provider.BasicFileAttributesProvider;
-
-import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
+import java.nio.file.attribute.GroupPrincipal;
+import java.nio.file.attribute.PosixFileAttributes;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
+import java.nio.file.attribute.UserPrincipal;
 import java.util.Objects;
+import java.util.Set;
+
+import javax.annotation.Nonnull;
+
+import com.dropbox.core.v2.files.FileMetadata;
+import com.dropbox.core.v2.files.Metadata;
+import com.github.fge.filesystem.attributes.provider.BasicFileAttributesProvider;
 
 /**
  * {@link BasicFileAttributes} implementation for DropBox
@@ -18,15 +26,15 @@ import java.util.Objects;
  * at 00:00:00 GMT).</p>
  */
 public final class DropBoxBasicFileAttributesProvider
-    extends BasicFileAttributesProvider
+    extends BasicFileAttributesProvider implements PosixFileAttributes
 {
-    private final DbxEntry.File fileEntry;
+    private final FileMetadata fileEntry;
 
-    public DropBoxBasicFileAttributesProvider(@Nonnull final DbxEntry entry)
+    public DropBoxBasicFileAttributesProvider(@Nonnull final Metadata entry)
         throws IOException
     {
-        fileEntry = Objects.requireNonNull(entry).isFolder()
-            ? entry.asFile() : null;
+        fileEntry = FileMetadata.class.isInstance(Objects.requireNonNull(entry))
+            ? FileMetadata.class.cast(entry) : null;
     }
 
     /**
@@ -43,7 +51,7 @@ public final class DropBoxBasicFileAttributesProvider
     public FileTime lastModifiedTime()
     {
         return fileEntry == null ? UNIX_EPOCH
-            : FileTime.fromMillis(fileEntry.lastModified.getTime());
+            : FileTime.fromMillis(fileEntry.getClientModified().getTime());
     }
 
     /**
@@ -76,6 +84,24 @@ public final class DropBoxBasicFileAttributesProvider
     @Override
     public long size()
     {
-        return fileEntry == null ? 0L : fileEntry.numBytes;
+        return fileEntry == null ? 0L : fileEntry.getSize();
+    }
+
+    /* @see java.nio.file.attribute.PosixFileAttributes#owner() */
+    @Override
+    public UserPrincipal owner() {
+        return null;
+    }
+
+    /* @see java.nio.file.attribute.PosixFileAttributes#group() */
+    @Override
+    public GroupPrincipal group() {
+        return null;
+    }
+
+    /* @see java.nio.file.attribute.PosixFileAttributes#permissions() */
+    @Override
+    public Set<PosixFilePermission> permissions() {
+        return fileEntry == null ? PosixFilePermissions.fromString("rwxr-xr-x") : PosixFilePermissions.fromString("rw-r--r--");
     }
 }

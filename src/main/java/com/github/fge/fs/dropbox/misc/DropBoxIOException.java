@@ -1,6 +1,5 @@
 package com.github.fge.fs.dropbox.misc;
 
-import com.dropbox.core.DbxClient;
 import com.dropbox.core.DbxException;
 
 import java.io.Closeable;

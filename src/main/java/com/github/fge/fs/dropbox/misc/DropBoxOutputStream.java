@@ -1,7 +1,7 @@
 package com.github.fge.fs.dropbox.misc;
 
-import com.dropbox.core.DbxClient;
 import com.dropbox.core.DbxException;
+import com.dropbox.core.DbxUploader;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -34,13 +34,13 @@ public final class DropBoxOutputStream
 {
     private final AtomicBoolean closeCalled = new AtomicBoolean(false);
 
-    private final DbxClient.Uploader uploader;
+    private final DbxUploader<?, ?, ?> uploader;
     private final OutputStream out;
 
-    public DropBoxOutputStream(@Nonnull final DbxClient.Uploader uploader)
+    public DropBoxOutputStream(@Nonnull final DbxUploader<?, ?, ?> uploader)
     {
         this.uploader = Objects.requireNonNull(uploader);
-        out = uploader.getBody();
+        out = uploader.getOutputStream();
     }
 
     @Override

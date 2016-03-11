@@ -1,18 +1,5 @@
 package com.github.fge.fs.dropbox.driver;
 
-import com.dropbox.core.DbxClient;
-import com.dropbox.core.DbxEntry;
-import com.dropbox.core.DbxException;
-import com.dropbox.core.DbxWriteMode;
-import com.github.fge.filesystem.driver.UnixLikeFileSystemDriverBase;
-import com.github.fge.filesystem.exceptions.IsDirectoryException;
-import com.github.fge.filesystem.provider.FileSystemFactoryProvider;
-import com.github.fge.fs.dropbox.misc.DropBoxIOException;
-import com.github.fge.fs.dropbox.misc.DropBoxInputStream;
-import com.github.fge.fs.dropbox.misc.DropBoxOutputStream;
-
-import javax.annotation.Nonnull;
-import javax.annotation.ParametersAreNonnullByDefault;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -22,61 +9,91 @@ import java.nio.file.CopyOption;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileStore;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.NotDirectoryException;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.spi.FileSystemProvider;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import javax.annotation.Nonnull;
+import javax.annotation.ParametersAreNonnullByDefault;
+
+import com.dropbox.core.DbxDownloader;
+import com.dropbox.core.DbxException;
+import com.dropbox.core.DbxUploader;
+import com.dropbox.core.v2.DbxClientV2;
+import com.dropbox.core.v2.files.FileMetadata;
+import com.dropbox.core.v2.files.FolderMetadata;
+import com.dropbox.core.v2.files.ListFolderResult;
+import com.dropbox.core.v2.files.Metadata;
+import com.github.fge.filesystem.driver.UnixLikeFileSystemDriverBase;
+import com.github.fge.filesystem.exceptions.IsDirectoryException;
+import com.github.fge.filesystem.provider.FileSystemFactoryProvider;
+import com.github.fge.fs.dropbox.misc.DropBoxIOException;
+import com.github.fge.fs.dropbox.misc.DropBoxInputStream;
+import com.github.fge.fs.dropbox.misc.DropBoxOutputStream;
 
 @SuppressWarnings("OverloadedVarargsMethod")
 @ParametersAreNonnullByDefault
 public final class DropBoxFileSystemDriver
     extends UnixLikeFileSystemDriverBase
 {
-    private final DbxClient client;
+    private final DbxClientV2 client;
 
     public DropBoxFileSystemDriver(final FileStore fileStore,
-        final FileSystemFactoryProvider provider, final DbxClient client)
+        final FileSystemFactoryProvider provider, final DbxClientV2 client)
     {
         super(fileStore, provider);
         this.client = client;
     }
 
+    /** */
+    private String toDbxPathString(Path path) throws IOException {
+         String pathString = path.toRealPath().toString();
+         return pathString.equals("/") ? "" : pathString;
+    }
+
+    /** TODO */
+    private Map<String, Metadata> cache = new HashMap<String, Metadata>() {{ put("/", new FolderMetadata("/", "/", "/", "0")); }};
+    
+    /** */
+    private Metadata getMetadata(Path path) throws IOException, DbxException {
+        String pathString = path.toRealPath().toString();
+        if (cache.containsKey(pathString)) {
+            return cache.get(pathString);
+        } else {
+            Metadata metadata = client.files().getMetadata(toDbxPathString(path));
+            cache.put(pathString, metadata);
+            return metadata;
+        }
+    }
+    
     @Nonnull
     @Override
     public InputStream newInputStream(final Path path,
         final Set<OpenOption> options)
         throws IOException
     {
-        // TODO: need a "shortcut" way for that; it's quite common
-        final String target = path.toRealPath().toString();
-        final DbxEntry entry;
-
         try {
-            entry = client.getMetadata(target);
+            final String target = toDbxPathString(path);
+
+            final Metadata entry = getMetadata(path);
+            // TODO: metadata driver
+            if (FolderMetadata.class.isInstance(entry))
+                throw new IsDirectoryException(target);
+    
+            final DbxDownloader<?> downloader = client.files().download(target, null);
+            return new DropBoxInputStream(downloader);
         } catch (DbxException e) {
-            throw DropBoxIOException.wrap(e);
+            throw new DropBoxIOException("path: " + path, e);
         }
-
-        // TODO: metadata driver
-        if (entry.isFolder())
-            throw new IsDirectoryException(target);
-
-        final DbxClient.Downloader downloader;
-
-        try {
-            downloader = client.startGetFile(target, null);
-        } catch (DbxException e) {
-            throw new DropBoxIOException(e);
-        }
-
-        return new DropBoxInputStream(downloader);
     }
 
     @Nonnull
@@ -85,25 +102,19 @@ public final class DropBoxFileSystemDriver
         final Set<OpenOption> options)
         throws IOException
     {
-        // TODO: need a "shortcut" way for that; it's quite common
-        final String target = path.toRealPath().toString();
-        final DbxEntry entry;
-
         try {
-            entry = client.getMetadata(target);
-        } catch (DbxException e) {
-            throw new DropBoxIOException(e);
-        }
+            final String target = toDbxPathString(path);
 
-        // TODO: metadata
-        if (entry != null)
-            if (entry.isFolder())
+            final Metadata entry = getMetadata(path);
+            // TODO: metadata
+            if (FolderMetadata.class.isInstance(entry))
                 throw new IsDirectoryException(target);
-
-        final DbxClient.Uploader uploader
-            = client.startUploadFileChunked(target, DbxWriteMode.force(), -1L);
-
-        return new DropBoxOutputStream(uploader);
+    
+            final DbxUploader<?, ?, ?> uploader = client.files().upload(target);
+            return new DropBoxOutputStream(uploader);
+        } catch (DbxException e) {
+            throw new DropBoxIOException("path: " + path, e);
+        }
     }
 
     @Nonnull
@@ -112,59 +123,55 @@ public final class DropBoxFileSystemDriver
         final DirectoryStream.Filter<? super Path> filter)
         throws IOException
     {
-        // TODO: need a "shortcut" way for that; it's quite common
-        final String target = dir.toRealPath().toString();
-        final DbxEntry.WithChildren dirent;
         try {
-            dirent = client.getMetadataWithChildren(target);
+            String target = toDbxPathString(dir);
+
+            final Metadata dirent = getMetadata(dir);
+            if (!FolderMetadata.class.isInstance(dirent))
+                throw new NotDirectoryException(target);
+    
+            final List<Metadata> children = client.files().listFolder(target).getEntries();
+            final List<Path> list = new ArrayList<>(children.size());
+            for (final Metadata child: children) {
+                list.add(dir.resolve(child.getName()));
+                cache.put(dir.resolve(child.getName()).toRealPath().toString(), child);
+            }
+    
+            //noinspection AnonymousInnerClassWithTooManyMethods
+            return new DirectoryStream<Path>()
+            {
+                private final AtomicBoolean alreadyOpen = new AtomicBoolean(false);
+    
+                @Override
+                public Iterator<Path> iterator()
+                {
+                    // required by the contract
+                    if (alreadyOpen.getAndSet(true))
+                        throw new IllegalStateException();
+                    return list.iterator();
+                }
+    
+                @Override
+                public void close()
+                    throws IOException
+                {
+                }
+            };
         } catch (DbxException e) {
-            throw new DropBoxIOException(e);
+            throw new DropBoxIOException("dir: " + dir, e);
         }
-
-        if (!dirent.entry.isFolder())
-            throw new NotDirectoryException(target);
-
-        final List<DbxEntry> children = dirent.children;
-        final List<Path> list = new ArrayList<>(children.size());
-
-        for (final DbxEntry child: children)
-            list.add(dir.resolve(child.name));
-
-        //noinspection AnonymousInnerClassWithTooManyMethods
-        return new DirectoryStream<Path>()
-        {
-            private final AtomicBoolean alreadyOpen = new AtomicBoolean(false);
-
-            @Override
-            public Iterator<Path> iterator()
-            {
-                // required by the contract
-                if (alreadyOpen.getAndSet(true))
-                    throw new IllegalStateException();
-                return list.iterator();
-            }
-
-            @Override
-            public void close()
-                throws IOException
-            {
-            }
-        };
     }
 
     @Override
     public void createDirectory(final Path dir, final FileAttribute<?>... attrs)
         throws IOException
     {
-        // TODO: need a "shortcut" way for that; it's quite common
-        final String target = dir.toRealPath().toString();
-
         try {
             // TODO: how to diagnose?
-            if (client.createFolder(target) == null)
-                throw new DropBoxIOException("cannot create directory??");
+            FolderMetadata metadata = client.files().createFolder(toDbxPathString(dir));
+            cache.put(toDbxPathString(dir), metadata);
         } catch (DbxException e) {
-            throw DropBoxIOException.wrap(e);
+            throw new DropBoxIOException("dir: " + dir, e);
         }
     }
 
@@ -172,25 +179,20 @@ public final class DropBoxFileSystemDriver
     public void delete(final Path path)
         throws IOException
     {
-        // TODO: need a "shortcut" way for that; it's quite common
-        final String target = path.toRealPath().toString();
-
-        final DbxEntry.WithChildren entry;
-
         try {
-            entry = client.getMetadataWithChildren(target);
-        } catch (DbxException e) {
-            throw DropBoxIOException.wrap(e);
-        }
+            final String target = toDbxPathString(path);
 
-        // TODO: metadata!
-        if (entry.entry.isFolder() && !entry.children.isEmpty())
-            throw new DirectoryNotEmptyException(target);
+            final Metadata entry = getMetadata(path);
+            // TODO: metadata!
+            if (FolderMetadata.class.isInstance(entry)) {
+                final ListFolderResult list = client.files().listFolder(target);
+                if (list.getEntries().size() > 0)
+                    throw new DirectoryNotEmptyException(target);
+            }
 
-        try {
-            client.delete(target);
+            client.files().delete(target);
         } catch (DbxException e) {
-            throw DropBoxIOException.wrap(e);
+            throw new DropBoxIOException("path: " + path, e);
         }
     }
 
@@ -199,34 +201,24 @@ public final class DropBoxFileSystemDriver
         final Set<CopyOption> options)
         throws IOException
     {
-        final String srcpath = source.toRealPath().toString();
-        final String dstpath = source.toRealPath().toString();
-
-        final DbxEntry.WithChildren dstentry;
-
         try {
-            dstentry = client.getMetadataWithChildren(dstpath);
-        } catch (DbxException e) {
-            throw DropBoxIOException.wrap(e);
-        }
-
-        if (dstentry != null) {
-            if (dstentry.entry.isFolder() && !dstentry.children.isEmpty())
-                throw new DirectoryNotEmptyException(dstpath);
-            // TODO: unknown what happens when a copy operation is performed
-            try {
-                client.delete(dstpath);
-            } catch (DbxException e) {
-                throw DropBoxIOException.wrap(e);
+            final String srcpath = toDbxPathString(source);
+            final String dstpath = toDbxPathString(target);
+    
+            final Metadata dstentry = getMetadata(target);
+            if (FolderMetadata.class.isInstance(dstentry)) {
+                final ListFolderResult list = client.files().listFolder(dstpath);
+                if (list.getEntries().size() > 0)
+                    throw new DirectoryNotEmptyException(dstpath);
             }
-        }
 
-        try {
+            // TODO: unknown what happens when a delete operation is performed
+            client.files().delete(dstpath);
+    
             // TODO: how to diagnose?
-            if (client.copy(srcpath, dstpath) == null)
-                throw new DropBoxIOException("cannot copy??");
+            client.files().copy(srcpath, dstpath);
         } catch (DbxException e) {
-            throw new DropBoxIOException(e);
+            throw new DropBoxIOException("source: " + source + ", target: " + target, e);
         }
     }
 
@@ -235,33 +227,24 @@ public final class DropBoxFileSystemDriver
         final Set<CopyOption> options)
         throws IOException
     {
-        final String srcpath = source.toRealPath().toString();
-        final String dstpath = source.toRealPath().toString();
-
-        final DbxEntry.WithChildren dstentry;
-
         try {
-            dstentry = client.getMetadataWithChildren(dstpath);
-        } catch (DbxException e) {
-            throw DropBoxIOException.wrap(e);
-        }
+            final String srcpath = toDbxPathString(source);
+            final String dstpath = toDbxPathString(target);
+    
+            final Metadata dstentry = getMetadata(target);
+            if (FolderMetadata.class.isInstance(dstentry)) {
+                final ListFolderResult list = client.files().listFolder(dstpath);
+                if (list.getEntries().size() > 0)
+                    throw new DirectoryNotEmptyException(dstpath);
+            }
 
-        if (dstentry != null) {
-            if (dstentry.entry.isFolder() && !dstentry.children.isEmpty())
-                throw new DirectoryNotEmptyException(dstpath);
             // TODO: unknown what happens when a move operation is performed
             // and the target already exists
-            try {
-                client.delete(dstpath);
-            } catch (DbxException e) {
-                throw DropBoxIOException.wrap(e);
-            }
-        }
-
-        try {
-            client.move(srcpath, dstpath);
+            client.files().delete(dstpath);
+    
+            client.files().move(srcpath, dstpath);
         } catch (DbxException e) {
-            throw DropBoxIOException.wrap(e);
+            throw new DropBoxIOException("source: " + source + ", target: " + target, e);
         }
     }
 
@@ -279,26 +262,20 @@ public final class DropBoxFileSystemDriver
     public void checkAccess(final Path path, final AccessMode... modes)
         throws IOException
     {
-        final String target = path.toRealPath().toString();
-
-        final DbxEntry entry;
-
         try {
-            entry = client.getMetadata(target);
+            final String target = toDbxPathString(path);
+
+            final Metadata entry = getMetadata(path);
+            if (!FileMetadata.class.isInstance(entry))
+                return;
+    
+            // TODO: assumed; not a file == directory
+            for (final AccessMode mode: modes)
+                if (mode == AccessMode.EXECUTE)
+                    throw new AccessDeniedException(target);
         } catch (DbxException e) {
-            throw DropBoxIOException.wrap(e);
+            throw new DropBoxIOException("path: " + path, e);
         }
-
-        if (entry == null)
-            throw new NoSuchFileException(target);
-
-        if (!entry.isFile())
-            return;
-
-        // TODO: assumed; not a file == directory
-        for (final AccessMode mode: modes)
-            if (mode == AccessMode.EXECUTE)
-                throw new AccessDeniedException(target);
     }
 
     @Override
@@ -314,9 +291,9 @@ public final class DropBoxFileSystemDriver
         throws IOException
     {
         try {
-            return client.getMetadata(path.toRealPath().toString());
+            return getMetadata(path);
         } catch (DbxException e) {
-            throw DropBoxIOException.wrap(e);
+            throw new DropBoxIOException("path: " + path, e);
         }
     }
 }

@@ -1,7 +1,7 @@
 package com.github.fge.fs.dropbox.provider;
 
-import com.dropbox.core.DbxClient;
 import com.dropbox.core.DbxRequestConfig;
+import com.dropbox.core.v2.DbxClientV2;
 import com.github.fge.filesystem.driver.FileSystemDriver;
 import com.github.fge.filesystem.provider.FileSystemRepositoryBase;
 import com.github.fge.fs.dropbox.driver.DropBoxFileSystemDriver;
@@ -37,7 +37,7 @@ public final class DropBoxFileSystemRepository
             throw new IllegalArgumentException("access token not found");
 
         final DbxRequestConfig config = new DbxRequestConfig(NAME, LOCALE);
-        final DbxClient client = new DbxClient(config, accessToken);
+        final DbxClientV2 client = new DbxClientV2(config, accessToken);
         final DropBoxFileStore fileStore
             = new DropBoxFileStore(client,
             factoryProvider.getAttributesFactory());

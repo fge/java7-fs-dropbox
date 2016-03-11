@@ -1,6 +1,6 @@
 package com.github.fge.fs.dropbox.misc;
 
-import com.dropbox.core.DbxClient;
+import com.dropbox.core.DbxDownloader;
 import com.github.fge.filesystem.driver.FileSystemDriver;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -34,13 +34,13 @@ import java.nio.file.Path;
 public final class DropBoxInputStream
     extends InputStream
 {
-    private final DbxClient.Downloader downloader;
+    private final DbxDownloader<?> downloader;
     private final InputStream delegate;
 
-    public DropBoxInputStream(final DbxClient.Downloader downloader)
+    public DropBoxInputStream(final DbxDownloader<?> downloader)
     {
         this.downloader = downloader;
-        delegate = downloader.body;
+        delegate = downloader.getInputStream();
     }
 
     @Override
