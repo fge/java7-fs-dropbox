@@ -32,7 +32,7 @@ import java.util.UUID;
 
 public class FileSystemTest
 {
-    private static final String ACCESS_TOKEN = "AYN4WsiaBTgAAAAAAAAAIL4iJnTphS5Ou9kbp3Wu2xA0BvktlbJPWCDukj76qhbs";
+    private static final String ACCESS_TOKEN = "yourAccessTokenHere";
     private static FileSystemProvider provider;
     private static URI uri;
     private static Map<String, String> env;
