@@ -1,7 +1,8 @@
 package com.github.fge.fs.dropbox.misc;
 
-import com.dropbox.core.DbxClient;
 import com.dropbox.core.DbxException;
+import com.dropbox.core.v1.DbxClientV1;
+import com.dropbox.core.v2.files.UploadUploader;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -10,7 +11,7 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Wrapper over {@link DbxClient.Uploader} extending {@link OutputStream}
+ * Wrapper over {@link DbxClientV1.Uploader} extending {@link OutputStream}
  *
  * <p>This class wraps a DropBox downloader class by extending {@code
  * InputStream} and delegating all of its methods to the downloader's
@@ -22,7 +23,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * throw an exception; which means it may throw none, or it may throw an
  * <em>unchecked</em> exception. As such, the {@link #close()} method of this
  * class captures all {@link RuntimeException}s which {@link
- * DbxClient.Uploader#close()} may throw and wrap it into a {@link
+ * DbxClientV1.Uploader#close()} may throw and wrap it into a {@link
  * DropBoxIOException}. If the underlying output stream <em>did</em> throw an
  * exception, however, then such an exception is {@link
  * Throwable#addSuppressed(Throwable) suppressed}.</p>
@@ -34,13 +35,14 @@ public final class DropBoxOutputStream
 {
     private final AtomicBoolean closeCalled = new AtomicBoolean(false);
 
-    private final DbxClient.Uploader uploader;
+    private final UploadUploader uploader;
     private final OutputStream out;
 
-    public DropBoxOutputStream(@Nonnull final DbxClient.Uploader uploader)
+    public DropBoxOutputStream(@Nonnull final UploadUploader uploader)
     {
+
         this.uploader = Objects.requireNonNull(uploader);
-        out = uploader.getBody();
+        out = uploader.getOutputStream();
     }
 
     @Override

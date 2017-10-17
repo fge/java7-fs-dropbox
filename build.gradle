@@ -20,42 +20,42 @@
 buildscript {
     repositories {
         maven {
-            url "http://repo.springsource.org/plugins-release";
-            mavenCentral();
+            url "http://repo.springsource.org/plugins-release"
+            mavenCentral()
         }
     }
     dependencies {
         classpath(group: "org.springframework.build.gradle",
-            name: "propdeps-plugin", version: "0.0.7");
+            name: "propdeps-plugin", version: "0.0.7")
         classpath(group: "info.solidsoft.gradle.pitest",
-            name: "gradle-pitest-plugin", version: "1.1.1");
+            name: "gradle-pitest-plugin", version: "1.1.1")
     }
-};
+}
 
-apply(plugin: "java");
-apply(plugin: "maven");
-apply(plugin: "signing");
-apply(plugin: "osgi");
-apply(plugin: "idea");
-apply(plugin: "eclipse");
-apply(plugin: "propdeps");
-apply(plugin: "propdeps-maven");
-apply(plugin: "propdeps-idea");
-apply(plugin: "propdeps-eclipse");
-apply(plugin: "info.solidsoft.pitest");
+apply(plugin: "java")
+apply(plugin: "maven")
+apply(plugin: "signing")
+apply(plugin: "osgi")
+apply(plugin: "idea")
+apply(plugin: "eclipse")
+apply(plugin: "propdeps")
+apply(plugin: "propdeps-maven")
+apply(plugin: "propdeps-idea")
+apply(plugin: "propdeps-eclipse")
+apply(plugin: "info.solidsoft.pitest")
 
-group = "com.github.fge";
-version = "0.0.2-SNAPSHOT";
-description = "FileSystem implementation over DropBox";
-sourceCompatibility = "1.7";
-targetCompatibility = "1.7"; // defaults to sourceCompatibility
+group = "com.github.fge"
+version = "0.0.2-SNAPSHOT"
+description = "FileSystem implementation over DropBox"
+sourceCompatibility = "1.7"
+targetCompatibility = "1.7" // defaults to sourceCompatibility
 
 /*
  * Repositories to use
  */
 repositories {
-    mavenCentral();
-    mavenLocal();
+    mavenCentral()
+    mavenLocal()
 }
 
 /*
@@ -63,63 +63,66 @@ repositories {
  */
 dependencies {
     compile(group: "com.github.fge", name: "java7-fs-base",
-        version: "0.0.2-SNAPSHOT");
+        version: "0.0.2-SNAPSHOT")
     compile(group: "com.dropbox.core", name: "dropbox-core-sdk",
-        version: "1.7.7");
+        version: "3.0.4")
     provided(group: "com.google.code.findbugs", name: "jsr305",
-        version: "3.0.0");
+        version: "3.0.0")
     testCompile(group: "org.testng", name: "testng", version: "6.8.8") {
-        exclude(group: "junit", module: "junit");
-        exclude(group: "org.beanshell", module: "bsh");
-        exclude(group: "org.yaml", module: "snakeyaml");
-    };
-    testCompile(group: "org.mockito", name: "mockito-core", version: "1.10.8");
-    testCompile(group: "org.assertj", name: "assertj-core", version: "1.7.0");
+        exclude(group: "junit", module: "junit")
+        exclude(group: "org.beanshell", module: "bsh")
+        exclude(group: "org.yaml", module: "snakeyaml")
+    }
+    testCompile(group: "org.mockito", name: "mockito-core", version: "1.10.8")
+    testCompile(group: "org.assertj", name: "assertj-core", version: "1.7.0")
+
+    testCompile(group: "com.github.marschall", name: "memoryfilesystem", version: "1.0.1")
+
 }
 
-javadoc.options.links("http://docs.oracle.com/javase/7/docs/api/");
-javadoc.options.links("http://jsr-305.googlecode.com/svn/trunk/javadoc/");
-javadoc.options.links("http://dropbox.github.io/dropbox-sdk-java/api-docs/v1.7.x/");
+javadoc.options.links("http://docs.oracle.com/javase/7/docs/api/")
+javadoc.options.links("http://jsr-305.googlecode.com/svn/trunk/javadoc/")
+javadoc.options.links("http://dropbox.github.io/dropbox-sdk-java/api-docs/v1.7.x/")
 
 /*
  * Necessary! Otherwise TestNG will not be used...
  */
 test {
     useTestNG() {
-        useDefaultListeners = true;
-    };
+        useDefaultListeners = true
+    }
 }
 
 pitest {
-    pitestVersion = "1.1.2"; // see https://github.com/hcoles/pitest/issues/150
+    pitestVersion = "1.1.2" // see https://github.com/hcoles/pitest/issues/150
 }
 
 /*
  * Necessary to generate the source and javadoc jars
  */
 task sourcesJar(type: Jar, dependsOn: classes) {
-    classifier = "sources";
-    from sourceSets.main.allSource;
+    classifier = "sources"
+    from sourceSets.main.allSource
 }
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
-    classifier = "javadoc";
-    from javadoc.destinationDir;
+    classifier = "javadoc"
+    from javadoc.destinationDir
 }
 
 artifacts {
-    archives jar;
-    archives sourcesJar;
-    archives javadocJar;
+    archives jar
+    archives sourcesJar
+    archives javadocJar
 }
 
 task wrapper(type: Wrapper) {
-    gradleVersion = "2.2";
-    distributionUrl = "http://services.gradle.org/distributions/gradle-${gradleVersion}-all.zip";
+    gradleVersion = "2.2"
+    distributionUrl = "http://services.gradle.org/distributions/gradle-${gradleVersion}-all.zip"
 }
 
 task pom << {
-    pom {}.writeTo("${projectDir}/pom.xml");
+    pom {}.writeTo("${projectDir}/pom.xml")
 }
 
 /*
@@ -127,47 +130,47 @@ task pom << {
  */
 
 project.ext {
-    gitrwscm = sprintf("git@github.com:fge/%s", name);
-    gitroscm = sprintf("https://github.com/fge/%s.git", name);
-    projectURL = sprintf("https://github.com/fge/%s", name);
-    sonatypeStaging = "https://oss.sonatype.org/service/local/staging/deploy/maven2/";
-    sonatypeSnapshots = "https://oss.sonatype.org/content/repositories/snapshots/";
-};
+    gitrwscm = sprintf("git@github.com:fge/%s", name)
+    gitroscm = sprintf("https://github.com/fge/%s.git", name)
+    projectURL = sprintf("https://github.com/fge/%s", name)
+    sonatypeStaging = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+    sonatypeSnapshots = "https://oss.sonatype.org/content/repositories/snapshots/"
+}
 
 task checkSigningRequirements << {
-    def requiredProperties = [ "sonatypeUsername", "sonatypePassword" ];
-    def noDice = false;
+    def requiredProperties = [ "sonatypeUsername", "sonatypePassword" ]
+    def noDice = false
     requiredProperties.each {
         if (project.properties[it] == null) {
-            noDice = true;
+            noDice = true
             System.err.printf("property \"%s\" is not defined!")
         }
     }
     if (noDice)
         throw new IllegalStateException("missing required properties for " +
-            "upload");
+            "upload")
 }
 
 uploadArchives {
-    dependsOn(checkSigningRequirements);
+    dependsOn(checkSigningRequirements)
     repositories {
         mavenDeployer {
             beforeDeployment {
-                MavenDeployment deployment -> signing.signPom(deployment);
+                MavenDeployment deployment -> signing.signPom(deployment)
             }
 
             repository(url: "${sonatypeStaging}") {
                 authentication(
                     userName: project.properties["sonatypeUsername"],
                     password: project.properties["sonatypePassword"]
-                );
+                )
             }
 
             snapshotRepository(url: "${sonatypeSnapshots}") {
                 authentication(
                     userName: project.properties["sonatypeUsername"],
                     password: project.properties["sonatypePassword"]
-                );
+                )
             }
         }
     }
@@ -181,43 +184,43 @@ uploadArchives {
     uploadArchives.repositories.mavenDeployer
 ]*.pom*.whenConfigured { pom ->
     pom.project {
-        name "${project.name}";
-        packaging "jar";
-        description "${project.description}";
-        url "${projectURL}";
+        name "${project.name}"
+        packaging "jar"
+        description "${project.description}"
+        url "${projectURL}"
 
         scm {
-            url "${gitrwscm}";
-            connection "${gitrwscm}";
-            developerConnection "${gitroscm}";
+            url "${gitrwscm}"
+            connection "${gitrwscm}"
+            developerConnection "${gitroscm}"
         }
 
         licenses {
             license {
-                name "Lesser General Public License, version 3 or greater";
-                url "http://www.gnu.org/licenses/lgpl.html";
-                distribution "repo";
-            };
+                name "Lesser General Public License, version 3 or greater"
+                url "http://www.gnu.org/licenses/lgpl.html"
+                distribution "repo"
+            }
             license {
-                name "Apache Software License, version 2.0";
-                url "http://www.apache.org/licenses/LICENSE-2.0";
-                distribution "repo";
+                name "Apache Software License, version 2.0"
+                url "http://www.apache.org/licenses/LICENSE-2.0"
+                distribution "repo"
             }
         }
 
         developers {
             developer {
-                id "fge";
-                name "Francis Galiegue";
-                email "fgaliegue@gmail.com";
+                id "fge"
+                name "Francis Galiegue"
+                email "fgaliegue@gmail.com"
             }
         }
     }
 }
 
-ext.forRelease = !version.endsWith("-SNAPSHOT");
+ext.forRelease = !version.endsWith("-SNAPSHOT")
 signing {
-    required { forRelease && gradle.taskGraph.hasTask("uploadArchives") };
-    sign configurations.archives;
+    required { forRelease && gradle.taskGraph.hasTask("uploadArchives") }
+    sign configurations.archives
 }
 

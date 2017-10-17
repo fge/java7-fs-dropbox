@@ -1,7 +1,7 @@
 package com.github.fge.fs.dropbox.misc;
 
-import com.dropbox.core.DbxClient;
 import com.dropbox.core.DbxException;
+import com.dropbox.core.v1.DbxClientV1;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -10,8 +10,8 @@ import java.io.IOException;
  * Class used as a wrapper over the DropBox API's unchecked exceptions when
  * an {@link IOException} is needed
  *
- * <p>The problem mainly comes from {@link DbxClient.Uploader} and {@link
- * DbxClient.Uploader}. Both of these methods define a {@code close()} method
+ * <p>The problem mainly comes from {@link DbxClientV1.Uploader} and {@link
+ * DbxClientV1.Uploader}. Both of these methods define a {@code close()} method
  * but none of them implement {@link Closeable}. Worse than that, at least as
  * far as the uploader is concerned, this method is not even idempotent, and all
  * exceptions it throws are <strong>unchecked</strong>.</p>
