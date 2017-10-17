@@ -1,6 +1,8 @@
 package com.github.fge.fs.dropbox.misc;
 
-import com.dropbox.core.DbxClient;
+import com.dropbox.core.DbxDownloader;
+import com.dropbox.core.v1.DbxClientV1;
+import com.dropbox.core.v2.files.FileMetadata;
 import com.github.fge.filesystem.driver.FileSystemDriver;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -10,7 +12,7 @@ import java.nio.file.OpenOption;
 import java.nio.file.Path;
 
 /**
- * Wrapper over {@link DbxClient.Downloader} extending {@link InputStream}
+ * Wrapper over {@link DbxClientV1.Downloader} extending {@link InputStream}
  *
  * <p>This class wraps a DropBox downloader class by extending {@code
  * InputStream} and delegating all of its methods to the downloader's
@@ -22,7 +24,7 @@ import java.nio.file.Path;
  * throw an exception; which means it may throw none, or it may throw an
  * <em>unchecked</em> exception. As such, the {@link #close()} method of this
  * class captures all {@link RuntimeException}s which {@link
- * DbxClient.Downloader#close()} may throw and wrap it into a {@link
+ * DbxClientV1.Downloader#close()} may throw and wrap it into a {@link
  * DropBoxIOException}. If the underlying input stream <em>did</em> throw an
  * exception, however, then such an exception is {@link
  * Throwable#addSuppressed(Throwable) suppressed}.</p>
@@ -34,13 +36,13 @@ import java.nio.file.Path;
 public final class DropBoxInputStream
     extends InputStream
 {
-    private final DbxClient.Downloader downloader;
+    private final DbxDownloader<FileMetadata> downloader;
     private final InputStream delegate;
 
-    public DropBoxInputStream(final DbxClient.Downloader downloader)
+    public DropBoxInputStream(final DbxDownloader<FileMetadata> downloader)
     {
         this.downloader = downloader;
-        delegate = downloader.body;
+        delegate = downloader.getInputStream();
     }
 
     @Override

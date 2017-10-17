@@ -1,9 +1,8 @@
 package com.github.fge.fs.dropbox.filestore;
 
-import com.dropbox.core.DbxAccountInfo;
-import com.dropbox.core.DbxAccountInfo.Quota;
-import com.dropbox.core.DbxClient;
 import com.dropbox.core.DbxException;
+import com.dropbox.core.v2.DbxClientV2;
+import com.dropbox.core.v2.users.SpaceUsage;
 import com.github.fge.filesystem.attributes.FileAttributesFactory;
 import com.github.fge.filesystem.filestore.FileStoreBase;
 
@@ -13,20 +12,20 @@ import java.nio.file.FileStore;
 /**
  * A simple DropBox {@link FileStore}
  *
- * <p>This makes use of information available in {@link DbxAccountInfo.Quota}.
+ * <p>This makes use of information available in {@link SpaceUsage}.
  * Information is computed in "real time".</p>
  */
 public final class DropBoxFileStore
     extends FileStoreBase
 {
-    private final DbxClient client;
+    private final DbxClientV2 client;
 
     /**
      * Constructor
      *
      * @param client the (valid) DropBox client to use
      */
-    public DropBoxFileStore(final DbxClient client,
+    public DropBoxFileStore(final DbxClientV2 client,
         final FileAttributesFactory factory)
     {
         super("dropbox", factory, false);
@@ -44,7 +43,7 @@ public final class DropBoxFileStore
     public long getTotalSpace()
         throws IOException
     {
-        return getQuota().total;
+        return getSpaceUsage().getAllocation().getTeamValue().getAllocated();
     }
 
     /**
@@ -66,8 +65,9 @@ public final class DropBoxFileStore
     public long getUsableSpace()
         throws IOException
     {
-        final Quota quota = getQuota();
-        return quota.total - quota.normal;
+        final SpaceUsage spaceUsage = getSpaceUsage();
+        //TODO: team or individual valeu?
+        return spaceUsage.getAllocation().getTeamValue().getAllocated() - spaceUsage.getUsed();
     }
 
     /**
@@ -87,15 +87,16 @@ public final class DropBoxFileStore
     public long getUnallocatedSpace()
         throws IOException
     {
-        final Quota quota = getQuota();
-        return quota.total - quota.normal;
+        final SpaceUsage spaceUsage = getSpaceUsage();
+        //TODO: team or individual valeu?
+        return spaceUsage.getAllocation().getTeamValue().getAllocated() - spaceUsage.getUsed();
     }
 
-    private Quota getQuota()
+    private SpaceUsage getSpaceUsage()
         throws IOException
     {
         try {
-            return client.getAccountInfo().quota;
+            return client.users().getSpaceUsage();
         } catch (DbxException e) {
             throw new IOException("cannot get quota info from account", e);
         }

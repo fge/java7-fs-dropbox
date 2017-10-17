@@ -1,6 +1,6 @@
 package com.github.fge.fs.dropbox.attr;
 
-import com.dropbox.core.DbxEntry;
+import com.dropbox.core.v2.files.Metadata;
 import com.github.fge.filesystem.attributes.FileAttributesFactory;
 
 public final class DropBoxFileAttributesFactory
@@ -8,7 +8,7 @@ public final class DropBoxFileAttributesFactory
 {
     public DropBoxFileAttributesFactory()
     {
-        setMetadataClass(DbxEntry.class);
+        setMetadataClass(Metadata.class);
         addImplementation("basic", DropBoxBasicFileAttributesProvider.class);
     }
 }

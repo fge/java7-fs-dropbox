@@ -1,13 +1,14 @@
 package com.github.fge.fs.dropbox.attr;
 
-import com.dropbox.core.DbxEntry;
+import com.dropbox.core.v2.files.FileMetadata;
+import com.dropbox.core.v2.files.FolderMetadata;
+import com.dropbox.core.v2.files.Metadata;
 import com.github.fge.filesystem.attributes.provider.BasicFileAttributesProvider;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
-import java.util.Objects;
 
 /**
  * {@link BasicFileAttributes} implementation for DropBox
@@ -20,13 +21,11 @@ import java.util.Objects;
 public final class DropBoxBasicFileAttributesProvider
     extends BasicFileAttributesProvider
 {
-    private final DbxEntry.File fileEntry;
+    private final Metadata metadata;
 
-    public DropBoxBasicFileAttributesProvider(@Nonnull final DbxEntry entry)
-        throws IOException
+    public DropBoxBasicFileAttributesProvider(@Nonnull final Metadata metadata) throws IOException
     {
-        fileEntry = Objects.requireNonNull(entry).isFolder()
-            ? entry.asFile() : null;
+        this.metadata = metadata;
     }
 
     /**
@@ -42,8 +41,14 @@ public final class DropBoxBasicFileAttributesProvider
     @Override
     public FileTime lastModifiedTime()
     {
-        return fileEntry == null ? UNIX_EPOCH
-            : FileTime.fromMillis(fileEntry.lastModified.getTime());
+        if (metadata instanceof FileMetadata)
+        {
+            return FileTime.fromMillis(((FileMetadata) metadata).getServerModified().getTime());
+        }
+        else
+        {
+            return UNIX_EPOCH;
+        }
     }
 
     /**
@@ -52,7 +57,7 @@ public final class DropBoxBasicFileAttributesProvider
     @Override
     public boolean isRegularFile()
     {
-        return fileEntry != null;
+        return metadata instanceof FileMetadata;
     }
 
     /**
@@ -61,7 +66,7 @@ public final class DropBoxBasicFileAttributesProvider
     @Override
     public boolean isDirectory()
     {
-        return fileEntry == null;
+        return metadata instanceof FolderMetadata;
     }
 
     /**
@@ -76,6 +81,13 @@ public final class DropBoxBasicFileAttributesProvider
     @Override
     public long size()
     {
-        return fileEntry == null ? 0L : fileEntry.numBytes;
+        if (metadata instanceof FileMetadata)
+        {
+            return ((FileMetadata) metadata).getSize();
+        }
+        else
+        {
+            return 0L;
+        }
     }
 }
