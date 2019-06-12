@@ -75,6 +75,7 @@ public final class DropBoxOutputStream
     public void close()
         throws IOException
     {
+System.out.println("DropBoxOutputStream::close: ");
         /*
          * Reentrancy: check if .close() has been called already...
          */

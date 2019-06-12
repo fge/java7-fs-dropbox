@@ -45,10 +45,10 @@ apply(plugin: "propdeps-eclipse");
 apply(plugin: "info.solidsoft.pitest");
 
 group = "com.github.fge";
-version = "0.0.2-SNAPSHOT";
+version = "0.0.2v";
 description = "FileSystem implementation over DropBox";
-sourceCompatibility = "1.7";
-targetCompatibility = "1.7"; // defaults to sourceCompatibility
+sourceCompatibility = "1.8";
+targetCompatibility = "1.8"; // defaults to sourceCompatibility
 
 /*
  * Repositories to use
@@ -56,14 +56,15 @@ targetCompatibility = "1.7"; // defaults to sourceCompatibility
 repositories {
     mavenCentral();
     mavenLocal();
+    maven { url 'https://jitpack.io' }
 }
 
 /*
  * List of dependencies
  */
 dependencies {
-    compile(group: "com.github.fge", name: "java7-fs-base",
-        version: "0.0.2-SNAPSHOT");
+    compile(group: "com.github.umjammer", name: "java7-fs-base",
+        version: "0.0.2v");
     compile(group: "com.dropbox.core", name: "dropbox-core-sdk",
         version: "2.0.0");
     provided(group: "com.google.code.findbugs", name: "jsr305",

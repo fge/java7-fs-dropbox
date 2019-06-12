@@ -90,11 +90,13 @@ public final class DropBoxFileStore
         return quota.getAllocation().getIndividualValue().getAllocated() - quota.getUsed();
     }
 
+    private SpaceUsage cache;
+    
     private SpaceUsage getQuota()
         throws IOException
     {
         try {
-            return client.users().getSpaceUsage();
+            return cache == null ? cache = client.users().getSpaceUsage() : cache;
         } catch (DbxException e) {
             throw new IOException("cannot get quota info from account", e);
         }

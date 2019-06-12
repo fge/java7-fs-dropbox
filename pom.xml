@@ -1,8 +1,9 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
+
   <groupId>com.github.fge</groupId>
   <artifactId>java7-fs-dropbox</artifactId>
-  <version>0.0.2-v2patch-SNAPSHOT</version>
+  <version>0.0.2v</version>
 
   <build>
     <plugins>
@@ -10,8 +11,8 @@
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
-          <source>1.7</source>
-          <target>1.7</target>
+          <source>1.8</source>
+          <target>1.8</target>
           <encoding>utf-8</encoding>
         </configuration>
         <version>3.3</version>
@@ -21,6 +22,10 @@
   </build>
 
   <repositories>
+    <repository>
+      <id>jitpack.io</id>
+      <url>https://jitpack.io</url>
+    </repository>
   </repositories>
 
   <dependencies>
@@ -32,9 +37,9 @@
     </dependency>
 
     <dependency>
-      <groupId>com.github.fge</groupId>
+      <groupId>com.github.umjammer</groupId>
       <artifactId>java7-fs-base</artifactId>
-      <version>0.0.2-SNAPSHOT</version>
+      <version>0.0.2v</version>
     </dependency>
 
     <dependency>

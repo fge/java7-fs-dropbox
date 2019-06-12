@@ -3,15 +3,23 @@ package com.github.fge.fs.dropbox.driver;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
+import java.nio.channels.NonWritableChannelException;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.SeekableByteChannel;
+import java.nio.channels.WritableByteChannel;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.AccessMode;
 import java.nio.file.CopyOption;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileStore;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.NotDirectoryException;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.spi.FileSystemProvider;
 import java.util.ArrayList;
@@ -78,7 +86,7 @@ public final class DropBoxFileSystemDriver
     @Nonnull
     @Override
     public InputStream newInputStream(final Path path,
-        final Set<OpenOption> options)
+        final Set<? extends OpenOption> options)
         throws IOException
     {
         try {
@@ -99,24 +107,29 @@ public final class DropBoxFileSystemDriver
     @Nonnull
     @Override
     public OutputStream newOutputStream(final Path path,
-        final Set<OpenOption> options)
+        final Set<? extends OpenOption> options)
         throws IOException
     {
         try {
             final String target = toDbxPathString(path);
 
-            final Metadata entry = getMetadata(path);
-            // TODO: metadata
-            if (FolderMetadata.class.isInstance(entry))
-                throw new IsDirectoryException(target);
+            try {
+                Metadata entry = getMetadata(path);
+
+                if (FolderMetadata.class.isInstance(entry))
+                    throw new IsDirectoryException(target);
+            } catch (DbxException e) {
+                System.err.println("newOutputStream: " + e.getMessage() + ", path: " + path);
+            }
     
             final DbxUploader<?, ?, ?> uploader = client.files().upload(target);
-            return new DropBoxOutputStream(uploader);
+            return new DropBoxOutputStream(uploader); // TODO add cache
         } catch (DbxException e) {
             throw new DropBoxIOException("path: " + path, e);
         }
     }
 
+    // TODO dir cache
     @Nonnull
     @Override
     public DirectoryStream<Path> newDirectoryStream(final Path dir,
@@ -163,6 +176,110 @@ public final class DropBoxFileSystemDriver
     }
 
     @Override
+    public SeekableByteChannel newByteChannel(Path path,
+                                              Set<? extends OpenOption> options,
+                                              FileAttribute<?>... attrs) throws IOException {
+        try {
+            if (options.contains(StandardOpenOption.WRITE) || options.contains(StandardOpenOption.APPEND)) {
+                final WritableByteChannel wbc = Channels.newChannel(newOutputStream(path, options));
+                long leftover = 0;
+                if (options.contains(StandardOpenOption.APPEND)) {
+                    Metadata metadata = getMetadata(path);
+                    if (metadata != null && FileMetadata.class.cast(metadata).getSize() >= 0)
+                        leftover = FileMetadata.class.cast(metadata).getSize();
+                }
+                final long offset = leftover;
+                return new SeekableByteChannel() {
+                    long written = offset;
+
+                    public boolean isOpen() {
+                        return wbc.isOpen();
+                    }
+
+                    public long position() throws IOException {
+                        return written;
+                    }
+
+                    public SeekableByteChannel position(long pos) throws IOException {
+                        throw new UnsupportedOperationException();
+                    }
+
+                    public int read(ByteBuffer dst) throws IOException {
+                        throw new UnsupportedOperationException();
+                    }
+
+                    public SeekableByteChannel truncate(long size) throws IOException {
+                        throw new UnsupportedOperationException();
+                    }
+
+                    public int write(ByteBuffer src) throws IOException {
+                        int n = wbc.write(src);
+                        written += n;
+                        return n;
+                    }
+
+                    public long size() throws IOException {
+                        return written;
+                    }
+
+                    public void close() throws IOException {
+                        wbc.close();
+                    }
+                };
+            } else {
+                Metadata metadata = getMetadata(path);
+                if (FolderMetadata.class.isInstance(metadata))
+                    throw new NoSuchFileException(path.toString());
+                final ReadableByteChannel rbc = Channels.newChannel(newInputStream(path, null));
+                final long size = FileMetadata.class.cast(metadata).getSize();
+                return new SeekableByteChannel() {
+                    long read = 0;
+
+                    public boolean isOpen() {
+                        return rbc.isOpen();
+                    }
+
+                    public long position() throws IOException {
+                        return read;
+                    }
+
+                    public SeekableByteChannel position(long pos) throws IOException {
+                        read = pos;
+                        return this;
+                    }
+
+                    public int read(ByteBuffer dst) throws IOException {
+                        int n = rbc.read(dst);
+                        if (n > 0) {
+                            read += n;
+                        }
+                        return n;
+                    }
+
+                    public SeekableByteChannel truncate(long size) throws IOException {
+                        throw new NonWritableChannelException();
+                    }
+
+                    public int write(ByteBuffer src) throws IOException {
+                        throw new NonWritableChannelException();
+                    }
+
+                    public long size() throws IOException {
+                        return size;
+                    }
+
+                    public void close() throws IOException {
+                        rbc.close();
+                    }
+                };
+            }
+        } catch (DbxException e) {
+            new DropBoxIOException("path: " + path, e);
+        }
+        return null;
+    }
+
+    @Override
     public void createDirectory(final Path dir, final FileAttribute<?>... attrs)
         throws IOException
     {
@@ -191,6 +308,7 @@ public final class DropBoxFileSystemDriver
             }
 
             client.files().delete(target);
+            cache.remove(path.toRealPath().toString());
         } catch (DbxException e) {
             throw new DropBoxIOException("path: " + path, e);
         }
@@ -274,7 +392,8 @@ public final class DropBoxFileSystemDriver
                 if (mode == AccessMode.EXECUTE)
                     throw new AccessDeniedException(target);
         } catch (DbxException e) {
-            throw new DropBoxIOException("path: " + path, e);
+//System.err.println("checkAccess: " + e.getMessage());
+            throw (IOException) new NoSuchFileException("path: " + path).initCause(e);
         }
     }
 
@@ -285,6 +404,10 @@ public final class DropBoxFileSystemDriver
         // TODO: what to do here? DbxClient does not implement Closeable :(
     }
 
+    /**
+     * you should throw FileNotFoundException when an entry for the path is not found.
+     * otherwise you will fail mkdir 
+     */
     @Nonnull
     @Override
     public Object getPathMetadata(final Path path)
@@ -293,7 +416,7 @@ public final class DropBoxFileSystemDriver
         try {
             return getMetadata(path);
         } catch (DbxException e) {
-            throw new DropBoxIOException("path: " + path, e);
+            throw (IOException) new NoSuchFileException("path: " + path).initCause(e);
         }
     }
 }
