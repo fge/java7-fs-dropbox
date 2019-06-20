@@ -3,7 +3,17 @@
 
   <groupId>com.github.fge</groupId>
   <artifactId>java7-fs-dropbox</artifactId>
-  <version>0.0.2v</version>
+  <version>0.0.3v</version>
+
+  <name>java7-fs-dropbox</name>
+  <description>A Java 7 FileSystem implementation over DropBox</description>
+  <url>https://github.com/fge/java7-fs-dropbox</url>
+  <scm>
+    <url>https://github.com/fge/java7-fs-dropbox</url>
+  </scm>
+  <issueManagement>
+    <url>https://github.com/fge/java7-fs-dropbox/issues</url>
+  </issueManagement>
 
   <build>
     <plugins>
@@ -83,13 +93,4 @@
     </dependency>
 
   </dependencies>
-  <name>java7-fs-dropbox</name>
-  <description>A Java 7 FileSystem implementation over DropBox</description>
-  <url>https://github.com/fge/java7-fs-dropbox</url>
-  <scm>
-    <url>https://github.com/fge/java7-fs-dropbox</url>
-  </scm>
-  <issueManagement>
-    <url>https://github.com/fge/java7-fs-dropbox/issues</url>
-  </issueManagement>
 </project>
