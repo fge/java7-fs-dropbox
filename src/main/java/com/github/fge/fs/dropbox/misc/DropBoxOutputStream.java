@@ -1,16 +1,19 @@
 package com.github.fge.fs.dropbox.misc;
 
-import com.dropbox.core.DbxException;
-import com.dropbox.core.DbxUploader;
-
-import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
+
+import javax.annotation.Nonnull;
+
+import com.dropbox.core.DbxException;
+import com.dropbox.core.DbxUploader;
+import com.dropbox.core.v2.files.FileMetadata;
 
 /**
- * Wrapper over {@link DbxClient.Uploader} extending {@link OutputStream}
+ * Wrapper over {@link DbxUploader} extending {@link OutputStream}
  *
  * <p>This class wraps a DropBox downloader class by extending {@code
  * InputStream} and delegating all of its methods to the downloader's
@@ -22,7 +25,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * throw an exception; which means it may throw none, or it may throw an
  * <em>unchecked</em> exception. As such, the {@link #close()} method of this
  * class captures all {@link RuntimeException}s which {@link
- * DbxClient.Uploader#close()} may throw and wrap it into a {@link
+ * DbxUploader#close()} may throw and wrap it into a {@link
  * DropBoxIOException}. If the underlying output stream <em>did</em> throw an
  * exception, however, then such an exception is {@link
  * Throwable#addSuppressed(Throwable) suppressed}.</p>
@@ -36,11 +39,13 @@ public final class DropBoxOutputStream
 
     private final DbxUploader<?, ?, ?> uploader;
     private final OutputStream out;
+    private Consumer<FileMetadata> consumer;
 
-    public DropBoxOutputStream(@Nonnull final DbxUploader<?, ?, ?> uploader)
+    public DropBoxOutputStream(@Nonnull final DbxUploader<?, ?, ?> uploader, Consumer<FileMetadata> consumer)
     {
         this.uploader = Objects.requireNonNull(uploader);
         out = uploader.getOutputStream();
+        this.consumer = consumer;
     }
 
     @Override
@@ -104,7 +109,8 @@ System.out.println("DropBoxOutputStream::close: ");
          */
 
         try {
-            uploader.finish();
+            FileMetadata newEntry = FileMetadata.class.cast(uploader.finish());
+            consumer.accept(newEntry);
         } catch (DbxException e) {
             finishedOK = false;
             if (exception == null)

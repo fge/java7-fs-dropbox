@@ -1,34 +1,30 @@
 package com.github.fge.fs.dropbox.driver;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.ByteBuffer;
-import java.nio.channels.Channels;
-import java.nio.channels.NonWritableChannelException;
-import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.FileChannel;
 import java.nio.channels.SeekableByteChannel;
-import java.nio.channels.WritableByteChannel;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.AccessMode;
 import java.nio.file.CopyOption;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.DirectoryStream;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.FileStore;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.NotDirectoryException;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.spi.FileSystemProvider;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.annotation.Nonnull;
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -39,6 +35,7 @@ import com.dropbox.core.DbxUploader;
 import com.dropbox.core.v2.DbxClientV2;
 import com.dropbox.core.v2.files.FileMetadata;
 import com.dropbox.core.v2.files.FolderMetadata;
+import com.dropbox.core.v2.files.GetMetadataErrorException;
 import com.dropbox.core.v2.files.ListFolderResult;
 import com.dropbox.core.v2.files.Metadata;
 import com.github.fge.filesystem.driver.UnixLikeFileSystemDriverBase;
@@ -48,41 +45,78 @@ import com.github.fge.fs.dropbox.misc.DropBoxIOException;
 import com.github.fge.fs.dropbox.misc.DropBoxInputStream;
 import com.github.fge.fs.dropbox.misc.DropBoxOutputStream;
 
+import vavi.nio.file.Cache;
+import vavi.nio.file.Util;
+import vavi.util.Debug;
+
+import static vavi.nio.file.Util.toPathString;
+
 @SuppressWarnings("OverloadedVarargsMethod")
 @ParametersAreNonnullByDefault
 public final class DropBoxFileSystemDriver
     extends UnixLikeFileSystemDriverBase
 {
     private final DbxClientV2 client;
+    private boolean ignoreAppleDouble = false;
 
     public DropBoxFileSystemDriver(final FileStore fileStore,
-        final FileSystemFactoryProvider provider, final DbxClientV2 client)
+        final FileSystemFactoryProvider provider, final DbxClientV2 client, final Map<String, ?> env)
     {
         super(fileStore, provider);
         this.client = client;
+        ignoreAppleDouble = (Boolean) ((Map<String, Object>) env).getOrDefault("ignoreAppleDouble", Boolean.FALSE);
     }
 
     /** */
     private String toDbxPathString(Path path) throws IOException {
-         String pathString = path.toRealPath().toString();
+         String pathString = toPathString(path);
          return pathString.equals("/") ? "" : pathString;
     }
 
-    /** TODO */
-    private Map<String, Metadata> cache = new HashMap<String, Metadata>() {{ put("/", new FolderMetadata("/", "/", "/", "0")); }};
-    
-    /** */
-    private Metadata getMetadata(Path path) throws IOException, DbxException {
-        String pathString = path.toRealPath().toString();
-        if (cache.containsKey(pathString)) {
-            return cache.get(pathString);
-        } else {
-            Metadata metadata = client.files().getMetadata(toDbxPathString(path));
-            cache.put(pathString, metadata);
-            return metadata;
-        }
+    /** ugly */
+    private boolean isFile(Metadata entry) {
+        return FileMetadata.class.isInstance(entry);
     }
-    
+
+    /** ugly */
+    private boolean isFolder(Metadata entry) {
+        return FolderMetadata.class.isInstance(entry);
+    }
+
+    /** */
+    private Cache<Metadata> cache = new Cache<Metadata>() {
+        /**
+         * TODO when the parent is not cached
+         * @see #ignoreAppleDouble
+         * @throws NoSuchFileException must be thrown when the path is not found in this cache
+         */
+        public Metadata getEntry(Path path) throws IOException {
+            if (cache.containsFile(path)) {
+                return cache.getFile(path);
+            } else {
+                if (ignoreAppleDouble && path.getFileName() != null && Util.isAppleDouble(path)) {
+                    throw new NoSuchFileException("ignore apple double file: " + path);
+                }
+
+                try {
+                    Metadata entry;
+                    if (path.getNameCount() == 0) {
+                        entry = new FolderMetadata("/", "/", "/", "0");
+                    } else {
+                        entry = client.files().getMetadata(toDbxPathString(path));
+                    }
+                    cache.putFile(path, entry);
+                    return entry;
+                } catch (GetMetadataErrorException e) {
+                    cache.removeEntry(path);
+                    throw new NoSuchFileException(path.toString());
+                } catch (DbxException e) {
+                    throw new DropBoxIOException("path: " + path, e);
+                }
+            }
+        }
+    };
+
     @Nonnull
     @Override
     public InputStream newInputStream(final Path path,
@@ -90,14 +124,13 @@ public final class DropBoxFileSystemDriver
         throws IOException
     {
         try {
-            final String target = toDbxPathString(path);
+            final Metadata entry = cache.getEntry(path);
 
-            final Metadata entry = getMetadata(path);
-            // TODO: metadata driver
-            if (FolderMetadata.class.isInstance(entry))
-                throw new IsDirectoryException(target);
-    
-            final DbxDownloader<?> downloader = client.files().download(target, null);
+            if (isFolder(entry)) {
+                throw new IsDirectoryException(path.toString());
+            }
+
+            final DbxDownloader<?> downloader = client.files().download(toDbxPathString(path), null);
             return new DropBoxInputStream(downloader);
         } catch (DbxException e) {
             throw new DropBoxIOException("path: " + path, e);
@@ -111,19 +144,26 @@ public final class DropBoxFileSystemDriver
         throws IOException
     {
         try {
-            final String target = toDbxPathString(path);
-
             try {
-                Metadata entry = getMetadata(path);
+                Metadata entry = cache.getEntry(path);
 
-                if (FolderMetadata.class.isInstance(entry))
-                    throw new IsDirectoryException(target);
-            } catch (DbxException e) {
-                System.err.println("newOutputStream: " + e.getMessage() + ", path: " + path);
+                if (isFolder(entry)) {
+                    throw new IsDirectoryException(path.toString());
+                } else {
+                    throw new FileAlreadyExistsException(path.toString());
+                }
+            } catch (NoSuchFileException e) {
+Debug.println("newOutputStream: " + e.getMessage());
             }
-    
-            final DbxUploader<?, ?, ?> uploader = client.files().upload(target);
-            return new DropBoxOutputStream(uploader); // TODO add cache
+
+            final DbxUploader<?, ?, ?> uploader = client.files().upload(toDbxPathString(path));
+            return new DropBoxOutputStream(uploader, newEntry -> {
+                try {
+                    cache.addEntry(path, newEntry);
+                } catch (IOException e) {
+                    throw new IllegalStateException(e);
+                }
+            }); // TODO add cache
         } catch (DbxException e) {
             throw new DropBoxIOException("path: " + path, e);
         }
@@ -137,39 +177,7 @@ public final class DropBoxFileSystemDriver
         throws IOException
     {
         try {
-            String target = toDbxPathString(dir);
-
-            final Metadata dirent = getMetadata(dir);
-            if (!FolderMetadata.class.isInstance(dirent))
-                throw new NotDirectoryException(target);
-    
-            final List<Metadata> children = client.files().listFolder(target).getEntries();
-            final List<Path> list = new ArrayList<>(children.size());
-            for (final Metadata child: children) {
-                list.add(dir.resolve(child.getName()));
-                cache.put(dir.resolve(child.getName()).toRealPath().toString(), child);
-            }
-    
-            //noinspection AnonymousInnerClassWithTooManyMethods
-            return new DirectoryStream<Path>()
-            {
-                private final AtomicBoolean alreadyOpen = new AtomicBoolean(false);
-    
-                @Override
-                public Iterator<Path> iterator()
-                {
-                    // required by the contract
-                    if (alreadyOpen.getAndSet(true))
-                        throw new IllegalStateException();
-                    return list.iterator();
-                }
-    
-                @Override
-                public void close()
-                    throws IOException
-                {
-                }
-            };
+            return Util.newDirectoryStream(getDirectoryEntries(dir));
         } catch (DbxException e) {
             throw new DropBoxIOException("dir: " + dir, e);
         }
@@ -179,104 +187,47 @@ public final class DropBoxFileSystemDriver
     public SeekableByteChannel newByteChannel(Path path,
                                               Set<? extends OpenOption> options,
                                               FileAttribute<?>... attrs) throws IOException {
-        try {
-            if (options.contains(StandardOpenOption.WRITE) || options.contains(StandardOpenOption.APPEND)) {
-                final WritableByteChannel wbc = Channels.newChannel(newOutputStream(path, options));
-                long leftover = 0;
-                if (options.contains(StandardOpenOption.APPEND)) {
-                    Metadata metadata = getMetadata(path);
-                    if (metadata != null && FileMetadata.class.cast(metadata).getSize() >= 0)
-                        leftover = FileMetadata.class.cast(metadata).getSize();
-                }
-                final long offset = leftover;
-                return new SeekableByteChannel() {
-                    long written = offset;
-
-                    public boolean isOpen() {
-                        return wbc.isOpen();
-                    }
-
-                    public long position() throws IOException {
-                        return written;
-                    }
-
-                    public SeekableByteChannel position(long pos) throws IOException {
-                        throw new UnsupportedOperationException();
-                    }
-
-                    public int read(ByteBuffer dst) throws IOException {
-                        throw new UnsupportedOperationException();
-                    }
-
-                    public SeekableByteChannel truncate(long size) throws IOException {
-                        throw new UnsupportedOperationException();
-                    }
-
-                    public int write(ByteBuffer src) throws IOException {
-                        int n = wbc.write(src);
-                        written += n;
-                        return n;
-                    }
-
-                    public long size() throws IOException {
-                        return written;
-                    }
-
-                    public void close() throws IOException {
-                        wbc.close();
-                    }
-                };
-            } else {
-                Metadata metadata = getMetadata(path);
-                if (FolderMetadata.class.isInstance(metadata))
-                    throw new NoSuchFileException(path.toString());
-                final ReadableByteChannel rbc = Channels.newChannel(newInputStream(path, null));
-                final long size = FileMetadata.class.cast(metadata).getSize();
-                return new SeekableByteChannel() {
-                    long read = 0;
-
-                    public boolean isOpen() {
-                        return rbc.isOpen();
-                    }
-
-                    public long position() throws IOException {
-                        return read;
-                    }
-
-                    public SeekableByteChannel position(long pos) throws IOException {
-                        read = pos;
-                        return this;
-                    }
-
-                    public int read(ByteBuffer dst) throws IOException {
-                        int n = rbc.read(dst);
-                        if (n > 0) {
-                            read += n;
+        if (options.contains(StandardOpenOption.WRITE) || options.contains(StandardOpenOption.APPEND)) {
+            return new Util.SeekableByteChannelForWriting(newOutputStream(path, options)) {
+                @Override
+                protected long getLeftOver() throws IOException {
+                    long leftover = 0;
+                    if (options.contains(StandardOpenOption.APPEND)) {
+                        Metadata entry = cache.getEntry(path);
+                        if (entry != null && FileMetadata.class.cast(entry).getSize() >= 0) {
+                            leftover = FileMetadata.class.cast(entry).getSize();
                         }
-                        return n;
                     }
+                    return leftover;
+                }
 
-                    public SeekableByteChannel truncate(long size) throws IOException {
-                        throw new NonWritableChannelException();
+                @Override
+                public void close() throws IOException {
+System.out.println("SeekableByteChannelForWriting::close");
+                    if (written == 0) {
+                        // TODO no mean
+System.out.println("SeekableByteChannelForWriting::close: scpecial: " + path);
+                        java.io.File file = new java.io.File(toPathString(path));
+                        FileInputStream fis = new FileInputStream(file);
+                        FileChannel fc = fis.getChannel();
+                        fc.transferTo(0, file.length(), this);
+                        fis.close();
                     }
-
-                    public int write(ByteBuffer src) throws IOException {
-                        throw new NonWritableChannelException();
-                    }
-
-                    public long size() throws IOException {
-                        return size;
-                    }
-
-                    public void close() throws IOException {
-                        rbc.close();
-                    }
-                };
+                    super.close();
+                }
+            };
+        } else {
+            Metadata entry = cache.getEntry(path);
+            if (isFolder(entry)) {
+                throw new NoSuchFileException(path.toString());
             }
-        } catch (DbxException e) {
-            new DropBoxIOException("path: " + path, e);
+            return new Util.SeekableByteChannelForReading(newInputStream(path, null)) {
+                @Override
+                protected long getSize() throws IOException {
+                    return FileMetadata.class.cast(entry).getSize();
+                }
+            };
         }
-        return null;
     }
 
     @Override
@@ -286,7 +237,7 @@ public final class DropBoxFileSystemDriver
         try {
             // TODO: how to diagnose?
             FolderMetadata metadata = client.files().createFolder(toDbxPathString(dir));
-            cache.put(toDbxPathString(dir), metadata);
+            cache.addEntry(dir, metadata);
         } catch (DbxException e) {
             throw new DropBoxIOException("dir: " + dir, e);
         }
@@ -297,18 +248,7 @@ public final class DropBoxFileSystemDriver
         throws IOException
     {
         try {
-            final String target = toDbxPathString(path);
-
-            final Metadata entry = getMetadata(path);
-            // TODO: metadata!
-            if (FolderMetadata.class.isInstance(entry)) {
-                final ListFolderResult list = client.files().listFolder(target);
-                if (list.getEntries().size() > 0)
-                    throw new DirectoryNotEmptyException(target);
-            }
-
-            client.files().delete(target);
-            cache.remove(path.toRealPath().toString());
+            removeEntry(path);
         } catch (DbxException e) {
             throw new DropBoxIOException("path: " + path, e);
         }
@@ -320,21 +260,14 @@ public final class DropBoxFileSystemDriver
         throws IOException
     {
         try {
-            final String srcpath = toDbxPathString(source);
-            final String dstpath = toDbxPathString(target);
-    
-            final Metadata dstentry = getMetadata(target);
-            if (FolderMetadata.class.isInstance(dstentry)) {
-                final ListFolderResult list = client.files().listFolder(dstpath);
-                if (list.getEntries().size() > 0)
-                    throw new DirectoryNotEmptyException(dstpath);
+            if (cache.existsEntry(target)) {
+                if (options.stream().anyMatch(o -> o.equals(StandardCopyOption.REPLACE_EXISTING))) {
+                    removeEntry(target);
+                } else {
+                    throw new FileAlreadyExistsException(target.toString());
+                }
             }
-
-            // TODO: unknown what happens when a delete operation is performed
-            client.files().delete(dstpath);
-    
-            // TODO: how to diagnose?
-            client.files().copy(srcpath, dstpath);
+            copyEntry(source, target);
         } catch (DbxException e) {
             throw new DropBoxIOException("source: " + source + ", target: " + target, e);
         }
@@ -346,21 +279,36 @@ public final class DropBoxFileSystemDriver
         throws IOException
     {
         try {
-            final String srcpath = toDbxPathString(source);
-            final String dstpath = toDbxPathString(target);
-    
-            final Metadata dstentry = getMetadata(target);
-            if (FolderMetadata.class.isInstance(dstentry)) {
-                final ListFolderResult list = client.files().listFolder(dstpath);
-                if (list.getEntries().size() > 0)
-                    throw new DirectoryNotEmptyException(dstpath);
+            if (cache.existsEntry(target)) {
+                if (isFolder(cache.getEntry(target))) {
+                    if (options.stream().anyMatch(o -> o.equals(StandardCopyOption.REPLACE_EXISTING))) {
+                        // replace the target
+                        if (cache.getChildCount(target) > 0) {
+                            throw new DirectoryNotEmptyException(target.toString());
+                        } else {
+                            removeEntry(target);
+                            moveEntry(source, target, false);
+                        }
+                    } else {
+                        // move into the target
+                        moveEntry(source, target, true);
+                    }
+                } else {
+                    if (options.stream().anyMatch(o -> o.equals(StandardCopyOption.REPLACE_EXISTING))) {
+                        removeEntry(target);
+                        moveEntry(source, target, false);
+                    } else {
+                        throw new FileAlreadyExistsException(target.toString());
+                    }
+                }
+            } else {
+                if (source.getParent().equals(target.getParent())) {
+                    // rename
+                    renameEntry(source, target);
+                } else {
+                    moveEntry(source, target, false);
+                }
             }
-
-            // TODO: unknown what happens when a move operation is performed
-            // and the target already exists
-            client.files().delete(dstpath);
-    
-            client.files().move(srcpath, dstpath);
         } catch (DbxException e) {
             throw new DropBoxIOException("source: " + source + ", target: " + target, e);
         }
@@ -380,21 +328,14 @@ public final class DropBoxFileSystemDriver
     public void checkAccess(final Path path, final AccessMode... modes)
         throws IOException
     {
-        try {
-            final String target = toDbxPathString(path);
+        final Metadata entry = cache.getEntry(path);
+        if (!isFile(entry))
+            return;
 
-            final Metadata entry = getMetadata(path);
-            if (!FileMetadata.class.isInstance(entry))
-                return;
-    
-            // TODO: assumed; not a file == directory
-            for (final AccessMode mode: modes)
-                if (mode == AccessMode.EXECUTE)
-                    throw new AccessDeniedException(target);
-        } catch (DbxException e) {
-//System.err.println("checkAccess: " + e.getMessage());
-            throw (IOException) new NoSuchFileException("path: " + path).initCause(e);
-        }
+        // TODO: assumed; not a file == directory
+        for (final AccessMode mode: modes)
+            if (mode == AccessMode.EXECUTE)
+                throw new AccessDeniedException(path.toString());
     }
 
     @Override
@@ -405,7 +346,7 @@ public final class DropBoxFileSystemDriver
     }
 
     /**
-     * you should throw FileNotFoundException when an entry for the path is not found.
+     * @throws IOException you should throw FileNotFoundException when an entry for the path is not found.
      * otherwise you will fail mkdir 
      */
     @Nonnull
@@ -413,10 +354,92 @@ public final class DropBoxFileSystemDriver
     public Object getPathMetadata(final Path path)
         throws IOException
     {
-        try {
-            return getMetadata(path);
-        } catch (DbxException e) {
-            throw (IOException) new NoSuchFileException("path: " + path).initCause(e);
+        return cache.getEntry(path);
+    }
+
+    /** */
+    private List<Path> getDirectoryEntries(Path dir) throws IOException, DbxException {
+        final Metadata entry = cache.getEntry(dir);
+
+        if (!isFolder(entry)) {
+//System.err.println(entry.name + ", " + entry.id + ", " + entry.hashCode());
+            throw new NotDirectoryException(dir.toString());
         }
+
+        List<Path> list = null;
+        if (cache.containsFolder(dir)) {
+            list = cache.getFolder(dir);
+        } else {
+            final List<Metadata> children = client.files().listFolder(toDbxPathString(dir)).getEntries();
+            list = new ArrayList<>(children.size());
+
+            for (final Metadata child: children) {
+                Path childPath = dir.resolve(child.getName());
+                list.add(childPath);
+                cache.putFile(childPath, child);
+            }
+            cache.putFolder(dir, list);
+        }
+
+        return list;
+    }
+
+    /** */
+    private void removeEntry(Path path) throws IOException, DbxException {
+        Metadata entry = cache.getEntry(path);
+        if (isFolder(entry)) {
+            final ListFolderResult list = client.files().listFolder(toDbxPathString(path));
+            if (list.getEntries().size() > 0) {
+                throw new DirectoryNotEmptyException(path.toString());
+            }
+        }
+
+        // TODO: unknown what happens when a move operation is performed
+        // and the target already exists
+        client.files().delete(toDbxPathString(path));
+
+        cache.removeEntry(path);
+    }
+
+    /** */
+    private void copyEntry(final Path source, final Path target) throws IOException, DbxException {
+        Metadata sourceEntry = cache.getEntry(source);
+        if (isFile(sourceEntry)) {
+            Metadata newEntry = client.files().copy(toDbxPathString(source), toDbxPathString(target));
+            cache.addEntry(target, newEntry);
+        } else if (isFolder(sourceEntry)) {
+            // TODO java spec. allows empty folder
+            throw new IsDirectoryException("source can not be a folder: " + source);
+        }
+    }
+
+    /**
+     * @param targetIsParent if the target is folder
+     */
+    private void moveEntry(final Path source, final Path target, boolean targetIsParent) throws IOException, DbxException {
+        Metadata sourceEntry = cache.getEntry(source);
+        if (isFile(sourceEntry)) {
+            String targetPathString = toDbxPathString(targetIsParent ? target.resolve(source.getFileName()) : target);
+            Metadata patchedEntry = client.files().move(toDbxPathString(source), targetPathString);
+            cache.removeEntry(source);
+            if (targetIsParent) {
+                cache.addEntry(target.resolve(source.getFileName()), patchedEntry);
+            } else {
+                cache.addEntry(target, patchedEntry);
+            }
+        } else if (isFolder(sourceEntry)) {
+            // TODO java spec. allows empty folder
+            throw new IsDirectoryException("source can not be a folder: " + source);
+        }
+    }
+
+    /** */
+    private void renameEntry(final Path source, final Path target) throws IOException, DbxException {
+        Metadata sourceEntry = cache.getEntry(source);
+//Debug.println(sourceEntry.id + ", " + sourceEntry.name);
+
+        Metadata patchedEntry = client.files().move(toDbxPathString(source), toDbxPathString(target));
+        cache.removeEntry(source);
+        cache.addEntry(target, patchedEntry);
     }
 }
