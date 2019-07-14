@@ -45,7 +45,7 @@ apply(plugin: "propdeps-eclipse");
 apply(plugin: "info.solidsoft.pitest");
 
 group = "com.github.fge";
-version = "0.0.4v";
+version = "0.0.5v";
 description = "FileSystem implementation over DropBox";
 sourceCompatibility = "1.8";
 targetCompatibility = "1.8"; // defaults to sourceCompatibility
@@ -66,11 +66,11 @@ dependencies {
     compile(group: "com.github.umjammer", name: "java7-fs-base",
         version: "0.0.4v");
     compile(group: "com.github.umjammer", name: "vavi-net-auth",
-        version: "0.0.1");
+        version: "0.0.3");
     compile(group: "com.github.umjammer", name: "vavi-nio-file",
         version: "0.0.1");
     compile(group: "com.dropbox.core", name: "dropbox-core-sdk",
-        version: "2.0.0");
+        version: "3.1.1");
     provided(group: "com.google.code.findbugs", name: "jsr305",
         version: "3.0.0");
     testCompile(group: "org.testng", name: "testng", version: "6.8.8") {

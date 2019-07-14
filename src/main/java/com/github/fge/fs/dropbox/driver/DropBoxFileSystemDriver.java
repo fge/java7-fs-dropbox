@@ -101,7 +101,7 @@ public final class DropBoxFileSystemDriver
                 try {
                     Metadata entry;
                     if (path.getNameCount() == 0) {
-                        entry = new FolderMetadata("/", "/", "/", "0");
+                        entry = new FolderMetadata("/", "0", "/", "/", null, null, null, null);
                     } else {
                         entry = client.files().getMetadata(toDbxPathString(path));
                     }

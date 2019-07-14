@@ -3,7 +3,7 @@
 
   <groupId>com.github.fge</groupId>
   <artifactId>java7-fs-dropbox</artifactId>
-  <version>0.0.4v</version>
+  <version>0.0.5v</version>
 
   <name>java7-fs-dropbox</name>
   <description>A Java 7 FileSystem implementation over DropBox</description>
@@ -43,7 +43,7 @@
     <dependency>
       <groupId>com.dropbox.core</groupId>
       <artifactId>dropbox-core-sdk</artifactId>
-      <version>2.0.0</version>
+      <version>3.1.1</version>
     </dependency>
 
     <dependency>
@@ -55,7 +55,7 @@
     <dependency>
       <groupId>com.github.umjammer</groupId>
       <artifactId>vavi-net-auth</artifactId>
-      <version>0.0.1</version>
+      <version>0.0.3</version>
     </dependency>
 
     <dependency>
