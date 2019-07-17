@@ -51,7 +51,6 @@ import vavi.util.Debug;
 
 import static vavi.nio.file.Util.toPathString;
 
-@SuppressWarnings("OverloadedVarargsMethod")
 @ParametersAreNonnullByDefault
 public final class DropBoxFileSystemDriver
     extends UnixLikeFileSystemDriverBase
@@ -59,6 +58,7 @@ public final class DropBoxFileSystemDriver
     private final DbxClientV2 client;
     private boolean ignoreAppleDouble = false;
 
+    @SuppressWarnings("unchecked")
     public DropBoxFileSystemDriver(final FileStore fileStore,
         final FileSystemFactoryProvider provider, final DbxClientV2 client, final Map<String, ?> env)
     {
@@ -236,7 +236,7 @@ System.out.println("SeekableByteChannelForWriting::close: scpecial: " + path);
     {
         try {
             // TODO: how to diagnose?
-            FolderMetadata metadata = client.files().createFolder(toDbxPathString(dir));
+            FolderMetadata metadata = client.files().createFolderV2(toDbxPathString(dir)).getMetadata();
             cache.addEntry(dir, metadata);
         } catch (DbxException e) {
             throw new DropBoxIOException("dir: " + dir, e);
@@ -396,7 +396,7 @@ System.out.println("SeekableByteChannelForWriting::close: scpecial: " + path);
 
         // TODO: unknown what happens when a move operation is performed
         // and the target already exists
-        client.files().delete(toDbxPathString(path));
+        client.files().deleteV2(toDbxPathString(path));
 
         cache.removeEntry(path);
     }
@@ -405,7 +405,7 @@ System.out.println("SeekableByteChannelForWriting::close: scpecial: " + path);
     private void copyEntry(final Path source, final Path target) throws IOException, DbxException {
         Metadata sourceEntry = cache.getEntry(source);
         if (isFile(sourceEntry)) {
-            Metadata newEntry = client.files().copy(toDbxPathString(source), toDbxPathString(target));
+            Metadata newEntry = client.files().copyV2(toDbxPathString(source), toDbxPathString(target)).getMetadata();
             cache.addEntry(target, newEntry);
         } else if (isFolder(sourceEntry)) {
             // TODO java spec. allows empty folder
@@ -420,7 +420,7 @@ System.out.println("SeekableByteChannelForWriting::close: scpecial: " + path);
         Metadata sourceEntry = cache.getEntry(source);
         if (isFile(sourceEntry)) {
             String targetPathString = toDbxPathString(targetIsParent ? target.resolve(source.getFileName()) : target);
-            Metadata patchedEntry = client.files().move(toDbxPathString(source), targetPathString);
+            Metadata patchedEntry = client.files().moveV2(toDbxPathString(source), targetPathString).getMetadata();
             cache.removeEntry(source);
             if (targetIsParent) {
                 cache.addEntry(target.resolve(source.getFileName()), patchedEntry);
@@ -435,10 +435,7 @@ System.out.println("SeekableByteChannelForWriting::close: scpecial: " + path);
 
     /** */
     private void renameEntry(final Path source, final Path target) throws IOException, DbxException {
-        Metadata sourceEntry = cache.getEntry(source);
-//Debug.println(sourceEntry.id + ", " + sourceEntry.name);
-
-        Metadata patchedEntry = client.files().move(toDbxPathString(source), toDbxPathString(target));
+        Metadata patchedEntry = client.files().moveV2(toDbxPathString(source), toDbxPathString(target)).getMetadata();
         cache.removeEntry(source);
         cache.addEntry(target, patchedEntry);
     }

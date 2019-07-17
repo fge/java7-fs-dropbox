@@ -9,8 +9,8 @@ import java.io.IOException;
  * Class used as a wrapper over the DropBox API's unchecked exceptions when
  * an {@link IOException} is needed
  *
- * <p>The problem mainly comes from {@link DbxClient.Uploader} and {@link
- * DbxClient.Uploader}. Both of these methods define a {@code close()} method
+ * <p>The problem mainly comes from {@link com.dropbox.core.DbxUploader} and {@link
+ * com.dropbox.core.DbxUploader}. Both of these methods define a {@code close()} method
  * but none of them implement {@link Closeable}. Worse than that, at least as
  * far as the uploader is concerned, this method is not even idempotent, and all
  * exceptions it throws are <strong>unchecked</strong>.</p>
@@ -22,7 +22,6 @@ import java.io.IOException;
  * @see DropBoxInputStream
  * @see DropBoxOutputStream
  */
-@SuppressWarnings({ "UnusedDeclaration", "serial" })
 public final class DropBoxIOException
     extends IOException
 {

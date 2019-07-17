@@ -45,7 +45,7 @@ apply(plugin: "propdeps-eclipse");
 apply(plugin: "info.solidsoft.pitest");
 
 group = "com.github.fge";
-version = "0.0.5v";
+version = "0.0.6v";
 description = "FileSystem implementation over DropBox";
 sourceCompatibility = "1.8";
 targetCompatibility = "1.8"; // defaults to sourceCompatibility

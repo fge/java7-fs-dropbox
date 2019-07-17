@@ -12,6 +12,8 @@ import com.dropbox.core.DbxException;
 import com.dropbox.core.DbxUploader;
 import com.dropbox.core.v2.files.FileMetadata;
 
+import vavi.util.Debug;
+
 /**
  * Wrapper over {@link DbxUploader} extending {@link OutputStream}
  *
@@ -29,9 +31,9 @@ import com.dropbox.core.v2.files.FileMetadata;
  * DropBoxIOException}. If the underlying output stream <em>did</em> throw an
  * exception, however, then such an exception is {@link
  * Throwable#addSuppressed(Throwable) suppressed}.</p>
+ *
+ * TODO: more complex than the input stuff; check again (.abort(), etc)
  */
-@SuppressWarnings("HtmlTagCanBeJavadocTag")
-// TODO: more complex than the input stuff; check again (.abort(), etc)
 public final class DropBoxOutputStream
     extends OutputStream
 {
@@ -80,7 +82,7 @@ public final class DropBoxOutputStream
     public void close()
         throws IOException
     {
-System.out.println("DropBoxOutputStream::close: ");
+Debug.println("DropBoxOutputStream::close: ");
         /*
          * Reentrancy: check if .close() has been called already...
          */

@@ -67,11 +67,9 @@ Debug.println("authenticatorClassName: " + authenticatorClassName);
 
         final String accessToken = new DropBoxLocalOAuth2(appCredential, authenticatorClassName).authorize(email);
 
-        final DbxRequestConfig config = new DbxRequestConfig(NAME, Locale.getDefault().toString());
+        final DbxRequestConfig config = DbxRequestConfig.newBuilder(NAME).withUserLocaleFrom(Locale.getDefault()).build();
         final DbxClientV2 client = new DbxClientV2(config, accessToken);
-        final DropBoxFileStore fileStore
-            = new DropBoxFileStore(client,
-            factoryProvider.getAttributesFactory());
+        final DropBoxFileStore fileStore = new DropBoxFileStore(client, factoryProvider.getAttributesFactory());
         return new DropBoxFileSystemDriver(fileStore, factoryProvider, client, env);
     }
 }

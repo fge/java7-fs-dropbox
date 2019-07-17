@@ -12,7 +12,7 @@ import java.nio.file.FileStore;
 /**
  * A simple DropBox {@link FileStore}
  *
- * <p>This makes use of information available in {@link DbxAccountInfo.Quota}.
+ * <p>This makes use of information available in {@link SpaceUsage}.
  * Information is computed in "real time".</p>
  */
 public final class DropBoxFileStore
@@ -91,7 +91,7 @@ public final class DropBoxFileStore
     }
 
     private SpaceUsage cache;
-    
+
     private SpaceUsage getQuota()
         throws IOException
     {
