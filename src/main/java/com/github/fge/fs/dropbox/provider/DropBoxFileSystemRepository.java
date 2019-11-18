@@ -5,6 +5,7 @@ import java.net.URI;
 import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.logging.Level;
 
 import javax.annotation.Nonnull;
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -44,7 +45,8 @@ public final class DropBoxFileSystemRepository
             PropsEntity.Util.bind(this);
 Debug.println("authenticatorClassName: " + authenticatorClassName);
         } catch (Exception e) {
-            throw new IllegalStateException(e);
+Debug.println(Level.WARNING, "no dropbox.properties in classpath, use defaut");
+            authenticatorClassName = "vavi.net.auth.oauth2.dropbox.DropBoxLocalAuthenticator";
         }
     }
 

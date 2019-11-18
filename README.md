@@ -1,4 +1,4 @@
-[![Release](https://jitpack.io/v/umjammer/java7-fs-dropbox.svg)](https://jitpack.io/#umjammer/java7-fs-dropbox)
+[![Release](https://jitpack.io/v/umjammer/java7-fs-dropbox.svg)](https://jitpack.io/#umjammer/java7-fs-dropbox) [![Actions Status](https://github.com/umjammer/java7-fs-dropbox/workflows/Java%20CI/badge.svg)](https://github.com/umjammer/java7-fs-dropbox/actions)
 
 ## java7-fs-dropbox
 
