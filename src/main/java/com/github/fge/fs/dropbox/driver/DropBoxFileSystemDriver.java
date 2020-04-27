@@ -22,6 +22,7 @@ import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.spi.FileSystemProvider;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -177,7 +178,7 @@ Debug.println("newOutputStream: " + e.getMessage());
         throws IOException
     {
         try {
-            return Util.newDirectoryStream(getDirectoryEntries(dir));
+            return Util.newDirectoryStream(getDirectoryEntries(dir, filter));
         } catch (DbxException e) {
             throw new DropBoxIOException("dir: " + dir, e);
         }
@@ -358,7 +359,7 @@ System.out.println("SeekableByteChannelForWriting::close: scpecial: " + path);
     }
 
     /** */
-    private List<Path> getDirectoryEntries(Path dir) throws IOException, DbxException {
+    private List<Path> getDirectoryEntries(Path dir,final DirectoryStream.Filter<? super Path> filter) throws IOException, DbxException {
         final Metadata entry = cache.getEntry(dir);
 
         if (!isFolder(entry)) {
@@ -379,6 +380,19 @@ System.out.println("SeekableByteChannelForWriting::close: scpecial: " + path);
                 cache.putFile(childPath, child);
             }
             cache.putFolder(dir, list);
+        }
+        
+        //Filtering out the file for which the pattern doesn't match
+        if(filter != null)
+        {
+        	Iterator<Path> iterator = list.iterator();
+        	while (iterator.hasNext()) {
+        		Path filePath = iterator.next();
+        		
+        		if(!filter.accept(filePath)) {
+        			iterator.remove();
+        		}
+        	}
         }
 
         return list;
