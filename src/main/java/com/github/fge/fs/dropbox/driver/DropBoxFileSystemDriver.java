@@ -87,7 +87,6 @@ public final class DropBoxFileSystemDriver
     /** */
     private Cache<Metadata> cache = new Cache<Metadata>() {
         /**
-         * TODO when the parent is not cached
          * @see #ignoreAppleDouble
          * @throws NoSuchFileException must be thrown when the path is not found in this cache
          */
@@ -170,7 +169,6 @@ Debug.println("newOutputStream: " + e.getMessage());
         }
     }
 
-    // TODO dir cache
     @Nonnull
     @Override
     public DirectoryStream<Path> newDirectoryStream(final Path dir,
