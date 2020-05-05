@@ -53,12 +53,6 @@ public class Main {
 
         URI uri = URI.create("dropbox:///?id=" + email);
 
-        BasicAppCredential appCredential = new DropBoxLocalAppCredential();
-        PropsEntity.Util.bind(appCredential);
-
-        Map<String, Object> env = new HashMap<>();
-        env.put(DropBoxFileSystemProvider.ENV_CREDENTIAL, appCredential);
-
         FileSystem fs = FileSystems.newFileSystem(uri, env);
             :
     }

@@ -5,7 +5,6 @@ import java.net.URI;
 import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.logging.Level;
 
 import javax.annotation.Nonnull;
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -18,13 +17,12 @@ import com.github.fge.fs.dropbox.driver.DropBoxFileSystemDriver;
 import com.github.fge.fs.dropbox.filestore.DropBoxFileStore;
 
 import vavi.net.auth.oauth2.BasicAppCredential;
-import vavi.net.auth.oauth2.dropbox.DropBoxLocalOAuth2;
-import vavi.util.Debug;
-import vavi.util.properties.annotation.Property;
-import vavi.util.properties.annotation.PropsEntity;
+import vavi.net.auth.oauth2.UserCredential;
+import vavi.net.auth.oauth2.dropbox.DropBoxLocalAppCredential;
+import vavi.net.auth.oauth2.dropbox.DropBoxLocalUserCredential;
+import vavi.net.auth.oauth2.dropbox.DropBoxOAuth2;
 
 @ParametersAreNonnullByDefault
-@PropsEntity(url = "classpath:dropbox.properties")
 public final class DropBoxFileSystemRepository
     extends FileSystemRepositoryBase
 {
@@ -35,39 +33,43 @@ public final class DropBoxFileSystemRepository
         super("dropbox", new DropboxFileSystemFactoryProvider());
     }
 
-    /** should be {@link vavi.net.auth.oauth2.Authenticator} and have a constructor with args (String, String) */
-    @Property(value = "vavi.net.auth.oauth2.dropbox.DropBoxLocalAuthenticator")
-    private String authenticatorClassName;
-
-    /* */
-    {
-        try {
-            PropsEntity.Util.bind(this);
-Debug.println("authenticatorClassName: " + authenticatorClassName);
-        } catch (Exception e) {
-Debug.println(Level.WARNING, "no dropbox.properties in classpath, use defaut");
-            authenticatorClassName = "vavi.net.auth.oauth2.dropbox.DropBoxLocalAuthenticator";
-        }
-    }
-
     @Nonnull
     @Override
     public FileSystemDriver createDriver(final URI uri,
         final Map<String, ?> env)
         throws IOException
     {
+        // 1. user credential
+        UserCredential userCredential = null;
+
         Map<String, String> params = getParamsMap(uri);
-        if (!params.containsKey(DropBoxFileSystemProvider.PARAM_ID)) {
-            throw new NoSuchElementException("uri not contains a param " + DropBoxFileSystemProvider.PARAM_ID);
+        if (params.containsKey(DropBoxFileSystemProvider.PARAM_ID)) {
+            String email = params.get(DropBoxFileSystemProvider.PARAM_ID);
+            userCredential = new DropBoxLocalUserCredential(email);
         }
-        final String email = params.get(DropBoxFileSystemProvider.PARAM_ID);
 
-        if (!env.containsKey(DropBoxFileSystemProvider.ENV_CREDENTIAL)) {
-            throw new NoSuchElementException("app credential not contains a param " + DropBoxFileSystemProvider.ENV_CREDENTIAL);
+        if (env.containsKey(DropBoxFileSystemProvider.ENV_USER_CREDENTIAL)) {
+            userCredential = UserCredential.class.cast(env.get(DropBoxFileSystemProvider.ENV_USER_CREDENTIAL));
         }
-        BasicAppCredential appCredential = BasicAppCredential.class.cast(env.get(DropBoxFileSystemProvider.ENV_CREDENTIAL));
 
-        final String accessToken = new DropBoxLocalOAuth2(appCredential, authenticatorClassName).authorize(email);
+        if (userCredential == null) {
+            throw new NoSuchElementException("uri not contains a param " + DropBoxFileSystemProvider.PARAM_ID + " nor " +
+                                             "env not contains a param " + DropBoxFileSystemProvider.ENV_USER_CREDENTIAL);
+        }
+
+        // 2. app credential
+        BasicAppCredential appCredential = null;
+
+        if (env.containsKey(DropBoxFileSystemProvider.ENV_APP_CREDENTIAL)) {
+            appCredential = BasicAppCredential.class.cast(env.get(DropBoxFileSystemProvider.ENV_APP_CREDENTIAL));
+        }
+
+        if (appCredential == null) {
+            appCredential = new DropBoxLocalAppCredential(); // TODO use prop
+        }
+
+        // 3. process
+        final String accessToken = new DropBoxOAuth2(appCredential).authorize(userCredential);
 
         final DbxRequestConfig config = DbxRequestConfig.newBuilder(NAME).withUserLocaleFrom(Locale.getDefault()).build();
         final DbxClientV2 client = new DbxClientV2(config, accessToken);
