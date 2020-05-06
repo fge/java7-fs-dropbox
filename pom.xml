@@ -17,7 +17,7 @@
 
   <profiles>
     <profile>
-      <id>local (not on github)</id>
+      <id>local (not on CI)</id>
       <activation>
         <file>
           <exists>${basedir}/local.properties</exists>
@@ -57,6 +57,7 @@
                 <TEST_PASSWORD>${test.password}</TEST_PASSWORD>
                 <TEST_CLIENT_ID>${test.client_id}</TEST_CLIENT_ID>
                 <TEST_CLIENT_SECRET>${test.client_secret}</TEST_CLIENT_SECRET>
+                <TEST_REDIRECT_URL>${test.redirect_url}</TEST_REDIRECT_URL>
               </environmentVariables>
               <argLine>-Djava.util.logging.config.file=src/test/resources/logging.properties</argLine>
               <trimStackTrace>false</trimStackTrace>

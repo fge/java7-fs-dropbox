@@ -2,3 +2,4 @@ test.client_id=
 test.client_secret=
 test.account=
 test.password=
+test.redirect_url=
