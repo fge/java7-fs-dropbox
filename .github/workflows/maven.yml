@@ -22,4 +22,4 @@ jobs:
         TEST_REDIRECT_URL : ${{ secrets.TEST_REDIRECT_URL }}
       run: |
         mkdir tmp
-        mvn -B package --file pom.xml
+        mvn -B package --file pom.xml -Dmaven.test.skip=true
