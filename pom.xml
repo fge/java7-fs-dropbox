@@ -19,8 +19,12 @@
     <profile>
       <id>local (not on github)</id>
       <activation>
+        <file>
+          <exists>${basedir}/local.properties</exists>
+        </file>
         <property>
-          <name>!env.GITHUB_WORKFLOW</name>
+          <name>env.JITPACK</name>
+          <value>!true</value>
         </property>
       </activation>
       <build>
@@ -37,7 +41,7 @@
                 </goals>
                 <configuration>
                   <files>
-                    <file>local.properties</file>
+                    <file>${basedir}/local.properties</file>
                   </files>
                 </configuration>
               </execution>
