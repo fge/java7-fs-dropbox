@@ -31,12 +31,16 @@ and handle any types of files.
 
 Next, prepare 2 property files.
 
+ * application credential
+
 ```shell
 $ cat ${HOME}/.vavifuse/dropbox.properties
 dropbox.clientId=your_client_id
 dropbox.clientSecret=your_client_secret
 dropbox.redirectUrl=http://localhost:30000
 ```
+
+ * user credential
 
 ```shell
 $ cat ${HOME}/.vavifuse/credentials.properties

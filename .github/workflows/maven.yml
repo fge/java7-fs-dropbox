@@ -14,4 +14,12 @@ jobs:
       with:
         java-version: 1.8
     - name: Build with Maven
-      run: mvn -B package --file pom.xml
+      env:
+        TEST_ACCOUNT : ${{ secrets.TEST_ACCOUNT }}
+        TEST_PASSWORD : ${{ secrets.TEST_PASSWORD }}
+        TEST_CLIENT_ID : ${{ secrets.TEST_CLIENT_ID }}
+        TEST_CLIENT_SECRET : ${{ secrets.TEST_CLIENT_SECRET }}
+        TEST_REDIRECT_URL : ${{ secrets.TEST_REDIRECT_URL }}
+      run: |
+        mkidr tmp
+        mvn -B package --file pom.xml
