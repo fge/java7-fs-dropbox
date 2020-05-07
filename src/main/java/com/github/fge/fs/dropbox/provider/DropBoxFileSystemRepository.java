@@ -42,14 +42,14 @@ public final class DropBoxFileSystemRepository
         // 1. user credential
         UserCredential userCredential = null;
 
-        Map<String, String> params = getParamsMap(uri);
-        if (params.containsKey(DropBoxFileSystemProvider.PARAM_ID)) {
-            String email = params.get(DropBoxFileSystemProvider.PARAM_ID);
-            userCredential = new DropBoxLocalUserCredential(email);
-        }
-
         if (env.containsKey(DropBoxFileSystemProvider.ENV_USER_CREDENTIAL)) {
             userCredential = UserCredential.class.cast(env.get(DropBoxFileSystemProvider.ENV_USER_CREDENTIAL));
+        }
+
+        Map<String, String> params = getParamsMap(uri);
+        if (userCredential == null && params.containsKey(DropBoxFileSystemProvider.PARAM_ID)) {
+            String email = params.get(DropBoxFileSystemProvider.PARAM_ID);
+            userCredential = new DropBoxLocalUserCredential(email);
         }
 
         if (userCredential == null) {
