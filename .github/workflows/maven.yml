@@ -21,5 +21,4 @@ jobs:
         TEST_CLIENT_SECRET : ${{ secrets.TEST_CLIENT_SECRET }}
         TEST_REDIRECT_URL : ${{ secrets.TEST_REDIRECT_URL }}
       run: |
-        mkdir tmp
         mvn -B package --file pom.xml -Dmaven.test.skip=true

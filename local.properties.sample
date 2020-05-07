@@ -3,3 +3,5 @@ test.client_secret=
 test.account=
 test.password=
 test.redirect_url=
+webdriver.chrome.driver=/usr/local/bin/chromedriver
+com.google.chrome.app=/Applications/Google Chrome.app/Contents/MacOS/Google Chrome
