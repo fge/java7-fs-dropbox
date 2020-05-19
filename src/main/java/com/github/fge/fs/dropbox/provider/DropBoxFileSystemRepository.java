@@ -16,11 +16,11 @@ import com.github.fge.filesystem.provider.FileSystemRepositoryBase;
 import com.github.fge.fs.dropbox.driver.DropBoxFileSystemDriver;
 import com.github.fge.fs.dropbox.filestore.DropBoxFileStore;
 
-import vavi.net.auth.oauth2.BasicAppCredential;
-import vavi.net.auth.oauth2.UserCredential;
+import vavi.net.auth.UserCredential;
+import vavi.net.auth.oauth2.OAuth2AppCredential;
 import vavi.net.auth.oauth2.dropbox.DropBoxLocalAppCredential;
-import vavi.net.auth.oauth2.dropbox.DropBoxLocalUserCredential;
 import vavi.net.auth.oauth2.dropbox.DropBoxOAuth2;
+import vavi.net.auth.web.dropbox.DropBoxLocalUserCredential;
 
 @ParametersAreNonnullByDefault
 public final class DropBoxFileSystemRepository
@@ -58,10 +58,10 @@ public final class DropBoxFileSystemRepository
         }
 
         // 2. app credential
-        BasicAppCredential appCredential = null;
+        OAuth2AppCredential appCredential = null;
 
         if (env.containsKey(DropBoxFileSystemProvider.ENV_APP_CREDENTIAL)) {
-            appCredential = BasicAppCredential.class.cast(env.get(DropBoxFileSystemProvider.ENV_APP_CREDENTIAL));
+            appCredential = OAuth2AppCredential.class.cast(env.get(DropBoxFileSystemProvider.ENV_APP_CREDENTIAL));
         }
 
         if (appCredential == null) {

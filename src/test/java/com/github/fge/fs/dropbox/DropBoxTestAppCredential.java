@@ -6,8 +6,8 @@
 
 package com.github.fge.fs.dropbox;
 
-import vavi.net.auth.oauth2.BaseLocalAppCredential;
-import vavi.net.auth.oauth2.BasicAppCredential;
+import vavi.net.auth.BaseLocalAppCredential;
+import vavi.net.auth.oauth2.OAuth2AppCredential;
 import vavi.util.properties.annotation.Env;
 import vavi.util.properties.annotation.PropsEntity;
 
@@ -27,7 +27,7 @@ import vavi.util.properties.annotation.PropsEntity;
  * @see "https://www.dropbox.com/developers/apps?_tk=pilot_lp&_ad=topbar4&_camp=myapps"
  */
 @PropsEntity
-public class DropBoxTestAppCredential extends BaseLocalAppCredential implements BasicAppCredential {
+public class DropBoxTestAppCredential extends BaseLocalAppCredential implements OAuth2AppCredential {
 
     @Env(name = "TEST_CLIENT_ID")
     private String clientId;
