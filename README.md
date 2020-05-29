@@ -15,13 +15,12 @@ This is an implementation of a Java 7
 
 ### jars
 
-https://jitpack.io/#umjammer/java7-fs-dropbox
+ * https://jitpack.io/#umjammer/java7-fs-dropbox
 
 ### selenium chrome driver
 
-Download the [chromedriver executable](https://chromedriver.chromium.org/downloads) and locate it into some directory.
-
-Don't forget to run jvm with jvm argument `-Dwebdriver.chrome.driver=/usr/local/bin/chromedriver`.
+ * Download the [chromedriver executable](https://chromedriver.chromium.org/downloads) and locate it into some directory.
+   * Don't forget to run jvm with jvm argument `-Dwebdriver.chrome.driver=/usr/local/bin/chromedriver`.
 
 ## Usage
 
