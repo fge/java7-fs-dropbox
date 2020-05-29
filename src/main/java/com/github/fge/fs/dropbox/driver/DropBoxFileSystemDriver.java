@@ -42,8 +42,6 @@ import com.github.fge.filesystem.driver.UnixLikeFileSystemDriverBase;
 import com.github.fge.filesystem.exceptions.IsDirectoryException;
 import com.github.fge.filesystem.provider.FileSystemFactoryProvider;
 import com.github.fge.fs.dropbox.misc.DropBoxIOException;
-import com.github.fge.fs.dropbox.misc.DropBoxInputStream;
-import com.github.fge.fs.dropbox.misc.DropBoxOutputStream;
 
 import vavi.nio.file.Cache;
 import vavi.nio.file.Util;
@@ -130,7 +128,12 @@ public final class DropBoxFileSystemDriver
             }
 
             final DbxDownloader<?> downloader = client.files().download(toDbxPathString(path), null);
-            return new DropBoxInputStream(downloader);
+            return new Util.InputStreamForDownloading(downloader.getInputStream()) {
+                @Override
+                protected void onClosed() throws IOException {
+                    downloader.close();
+                }
+            };
         } catch (DbxException e) {
             throw new DropBoxIOException("path: " + path, e);
         }
@@ -156,13 +159,19 @@ Debug.println("newOutputStream: " + e.getMessage());
             }
 
             final DbxUploader<?, ?, ?> uploader = client.files().upload(toDbxPathString(path));
-            return new DropBoxOutputStream(uploader, newEntry -> {
-                try {
-                    cache.addEntry(path, newEntry);
-                } catch (IOException e) {
-                    throw new IllegalStateException(e);
+            return new Util.OutputStreamForUploading(uploader.getOutputStream()) {
+                @Override
+                protected void onClosed() throws IOException {
+                    try {
+                        FileMetadata newEntry = FileMetadata.class.cast(uploader.finish());
+                        cache.addEntry(path, newEntry);
+                    } catch (DbxException e) {
+                        throw new DropBoxIOException(e);
+                    } finally {
+                        uploader.close();
+                    }
                 }
-            }); // TODO add cache
+            };
         } catch (DbxException e) {
             throw new DropBoxIOException("path: " + path, e);
         }
