@@ -1,10 +1,8 @@
 package com.github.fge.fs.dropbox.driver;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.channels.FileChannel;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.AccessMode;
@@ -22,6 +20,7 @@ import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.spi.FileSystemProvider;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -44,6 +43,7 @@ import com.github.fge.filesystem.provider.FileSystemFactoryProvider;
 import com.github.fge.fs.dropbox.misc.DropBoxIOException;
 
 import vavi.nio.file.Cache;
+import vavi.nio.file.UploadMonitor;
 import vavi.nio.file.Util;
 import vavi.util.Debug;
 
@@ -64,6 +64,12 @@ public final class DropBoxFileSystemDriver
         this.client = client;
         ignoreAppleDouble = (Boolean) ((Map<String, Object>) env).getOrDefault("ignoreAppleDouble", Boolean.FALSE);
     }
+
+    /** */
+    private UploadMonitor uploadMonitor = new UploadMonitor();
+
+    /** entry for uploading (for attributes) */
+    private static final Metadata dummy = new FileMetadata("vavi-nio-file-dropbox.dummy", "dummy", new Date(), new Date(), "000000000", 0);
 
     /** */
     private String toDbxPathString(Path path) throws IOException {
@@ -195,6 +201,7 @@ Debug.println("newOutputStream: " + e.getMessage());
                                               Set<? extends OpenOption> options,
                                               FileAttribute<?>... attrs) throws IOException {
         if (options != null && Util.isWriting(options)) {
+            uploadMonitor.start(path);
             return new Util.SeekableByteChannelForWriting(newOutputStream(path, options)) {
                 @Override
                 protected long getLeftOver() throws IOException {
@@ -211,15 +218,7 @@ Debug.println("newOutputStream: " + e.getMessage());
                 @Override
                 public void close() throws IOException {
 System.out.println("SeekableByteChannelForWriting::close");
-                    if (written == 0) {
-                        // TODO no mean
-System.out.println("SeekableByteChannelForWriting::close: scpecial: " + path);
-                        java.io.File file = new java.io.File(toPathString(path));
-                        FileInputStream fis = new FileInputStream(file);
-                        FileChannel fc = fis.getChannel();
-                        fc.transferTo(0, file.length(), this);
-                        fis.close();
-                    }
+                    uploadMonitor.finish(path);
                     super.close();
                 }
             };
@@ -336,6 +335,11 @@ System.out.println("SeekableByteChannelForWriting::close: scpecial: " + path);
     public void checkAccess(final Path path, final AccessMode... modes)
         throws IOException
     {
+        if (uploadMonitor.isUploading(path)) {
+Debug.println("uploading... : " + path);
+            return;
+        }
+
         final Metadata entry = cache.getEntry(path);
         if (!isFile(entry))
             return;
@@ -362,6 +366,11 @@ System.out.println("SeekableByteChannelForWriting::close: scpecial: " + path);
     public Object getPathMetadata(final Path path)
         throws IOException
     {
+        if (uploadMonitor.isUploading(path)) {
+Debug.println("uploading... : " + path);
+            return dummy;
+        }
+
         return cache.getEntry(path);
     }
 
