@@ -17,7 +17,7 @@
 
   <properties>
     <vavi-nio-file.groupId>com.github.umjammer</vavi-nio-file.groupId>
-    <vavi-nio-file.version>0.0.8</vavi-nio-file.version>
+    <vavi-nio-file.version>0.0.9</vavi-nio-file.version>
   </properties>
 
   <profiles>
