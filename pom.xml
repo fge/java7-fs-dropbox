@@ -3,7 +3,7 @@
 
   <groupId>com.github.fge</groupId>
   <artifactId>java7-fs-dropbox</artifactId>
-  <version>0.0.13v</version>
+  <version>0.0.14v</version>
 
   <name>java7-fs-dropbox</name>
   <description>A Java 7 FileSystem implementation over DropBox</description>
@@ -14,6 +14,11 @@
   <issueManagement>
     <url>https://github.com/umjammer/java7-fs-dropbox/issues</url>
   </issueManagement>
+
+  <properties>
+    <vavi-nio-file.groupId>com.github.umjammer</vavi-nio-file.groupId>
+    <vavi-nio-file.version>0.0.8</vavi-nio-file.version>
+  </properties>
 
   <profiles>
     <profile>
@@ -124,14 +129,14 @@
 
     <dependency>
       <groupId>com.github.umjammer</groupId>
-      <artifactId>vavi-commons</artifactId>
-      <version>1.1.0</version>
-    </dependency>
-
-    <dependency>
-      <groupId>com.github.umjammer</groupId>
       <artifactId>java7-fs-base</artifactId>
       <version>0.0.7v</version>
+      <exclusions>
+        <exclusion>
+          <groupId>com.github.umjammer</groupId>
+          <artifactId>vavi-commons</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
     <dependency>
@@ -141,9 +146,9 @@
     </dependency>
 
     <dependency>
-      <groupId>com.github.umjammer</groupId>
+      <groupId>${vavi-nio-file.groupId}</groupId>
       <artifactId>vavi-nio-file</artifactId>
-      <version>0.0.7</version>
+      <version>${vavi-nio-file.version}</version>
     </dependency>
 
     <dependency>
@@ -166,9 +171,9 @@
     </dependency>
 
     <dependency>
-      <groupId>com.github.umjammer</groupId>
+      <groupId>${vavi-nio-file.groupId}</groupId>
       <artifactId>vavi-nio-file</artifactId>
-      <version>0.0.7</version>
+      <version>${vavi-nio-file.version}</version>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>
