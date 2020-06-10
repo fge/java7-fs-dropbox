@@ -51,7 +51,7 @@ Then write your code! Here is a short example (imports omitted for brevity):
 ```java
 public class Main {
 
-    public static void main(final String... args) throws IOException {
+    public static void main(String[] args) throws IOException {
         String email = "xxx@yyy.zzz";
 
         URI uri = URI.create("dropbox:///?id=" + email);
@@ -64,4 +64,4 @@ public class Main {
 
 ### See also
 
-https://github.com/umjammer/vavi-apps-fuse/blob/master/src/test/java/vavi/nio/file/dropbox/Main.java
+https://github.com/umjammer/vavi-apps-fuse/blob/master/vavi-nio-file-gathered/src/test/java/vavi/nio/file/dropbox/Main.java
