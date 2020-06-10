@@ -3,7 +3,6 @@ package com.github.fge.fs.dropbox.driver;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.channels.SeekableByteChannel;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.AccessMode;
 import java.nio.file.CopyOption;
@@ -16,11 +15,9 @@ import java.nio.file.NotDirectoryException;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.spi.FileSystemProvider;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -37,13 +34,12 @@ import com.dropbox.core.v2.files.FolderMetadata;
 import com.dropbox.core.v2.files.GetMetadataErrorException;
 import com.dropbox.core.v2.files.ListFolderResult;
 import com.dropbox.core.v2.files.Metadata;
-import com.github.fge.filesystem.driver.UnixLikeFileSystemDriverBase;
+import com.github.fge.filesystem.driver.ExtendedFileSystemDriverBase;
 import com.github.fge.filesystem.exceptions.IsDirectoryException;
 import com.github.fge.filesystem.provider.FileSystemFactoryProvider;
 import com.github.fge.fs.dropbox.misc.DropBoxIOException;
 
 import vavi.nio.file.Cache;
-import vavi.nio.file.UploadMonitor;
 import vavi.nio.file.Util;
 import vavi.util.Debug;
 
@@ -51,7 +47,7 @@ import static vavi.nio.file.Util.toPathString;
 
 @ParametersAreNonnullByDefault
 public final class DropBoxFileSystemDriver
-    extends UnixLikeFileSystemDriverBase
+    extends ExtendedFileSystemDriverBase
 {
     private final DbxClientV2 client;
     private boolean ignoreAppleDouble = false;
@@ -64,12 +60,6 @@ public final class DropBoxFileSystemDriver
         this.client = client;
         ignoreAppleDouble = (Boolean) ((Map<String, Object>) env).getOrDefault("ignoreAppleDouble", Boolean.FALSE);
     }
-
-    /** */
-    private UploadMonitor uploadMonitor = new UploadMonitor();
-
-    /** entry for uploading (for attributes) */
-    private static final Metadata dummy = new FileMetadata("vavi-nio-file-dropbox.dummy", "dummy", new Date(), new Date(), "000000000", 0);
 
     /** */
     private String toDbxPathString(Path path) throws IOException {
@@ -197,46 +187,6 @@ Debug.println("newOutputStream: " + e.getMessage());
     }
 
     @Override
-    public SeekableByteChannel newByteChannel(Path path,
-                                              Set<? extends OpenOption> options,
-                                              FileAttribute<?>... attrs) throws IOException {
-        if (options != null && Util.isWriting(options)) {
-            uploadMonitor.start(path);
-            return new Util.SeekableByteChannelForWriting(newOutputStream(path, options)) {
-                @Override
-                protected long getLeftOver() throws IOException {
-                    long leftover = 0;
-                    if (options.contains(StandardOpenOption.APPEND)) {
-                        Metadata entry = cache.getEntry(path);
-                        if (entry != null && FileMetadata.class.cast(entry).getSize() >= 0) {
-                            leftover = FileMetadata.class.cast(entry).getSize();
-                        }
-                    }
-                    return leftover;
-                }
-
-                @Override
-                public void close() throws IOException {
-System.out.println("SeekableByteChannelForWriting::close");
-                    uploadMonitor.finish(path);
-                    super.close();
-                }
-            };
-        } else {
-            Metadata entry = cache.getEntry(path);
-            if (isFolder(entry)) {
-                throw new NoSuchFileException(path.toString());
-            }
-            return new Util.SeekableByteChannelForReading(newInputStream(path, null)) {
-                @Override
-                protected long getSize() throws IOException {
-                    return FileMetadata.class.cast(entry).getSize();
-                }
-            };
-        }
-    }
-
-    @Override
     public void createDirectory(final Path dir, final FileAttribute<?>... attrs)
         throws IOException
     {
@@ -332,14 +282,9 @@ System.out.println("SeekableByteChannelForWriting::close");
      * @see FileSystemProvider#checkAccess(Path, AccessMode...)
      */
     @Override
-    public void checkAccess(final Path path, final AccessMode... modes)
+    protected void checkAccessImpl(final Path path, final AccessMode... modes)
         throws IOException
     {
-        if (uploadMonitor.isUploading(path)) {
-Debug.println("uploading... : " + path);
-            return;
-        }
-
         final Metadata entry = cache.getEntry(path);
         if (!isFile(entry))
             return;
@@ -363,14 +308,9 @@ Debug.println("uploading... : " + path);
      */
     @Nonnull
     @Override
-    public Object getPathMetadata(final Path path)
+    protected Object getPathMetadataImpl(final Path path)
         throws IOException
     {
-        if (uploadMonitor.isUploading(path)) {
-Debug.println("uploading... : " + path);
-            return dummy;
-        }
-
         return cache.getEntry(path);
     }
 
