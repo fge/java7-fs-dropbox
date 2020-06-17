@@ -3,7 +3,7 @@
 
   <groupId>com.github.fge</groupId>
   <artifactId>java7-fs-dropbox</artifactId>
-  <version>0.0.15v</version>
+  <version>0.0.16v</version>
 
   <name>java7-fs-dropbox</name>
   <description>A Java 7 FileSystem implementation over DropBox</description>
@@ -130,7 +130,7 @@
     <dependency>
       <groupId>com.github.umjammer</groupId>
       <artifactId>java7-fs-base</artifactId>
-      <version>0.0.8v</version>
+      <version>0.0.9v</version>
     </dependency>
 
     <dependency>
