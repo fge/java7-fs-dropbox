@@ -1,5 +1,7 @@
 package com.github.fge.fs.dropbox.driver;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -124,12 +126,12 @@ public final class DropBoxFileSystemDriver
             }
 
             final DbxDownloader<?> downloader = client.files().download(toDbxPathString(path), null);
-            return new Util.InputStreamForDownloading(downloader.getInputStream()) {
+            return new BufferedInputStream(new Util.InputStreamForDownloading(downloader.getInputStream()) {
                 @Override
                 protected void onClosed() throws IOException {
                     downloader.close();
                 }
-            };
+            });
         } catch (DbxException e) {
             throw new DropBoxIOException("path: " + path, e);
         }
@@ -155,7 +157,7 @@ Debug.println("newOutputStream: " + e.getMessage());
             }
 
             final DbxUploader<?, ?, ?> uploader = client.files().upload(toDbxPathString(path));
-            return new Util.OutputStreamForUploading(uploader.getOutputStream()) {
+            return new BufferedOutputStream(new Util.OutputStreamForUploading(uploader.getOutputStream()) {
                 @Override
                 protected void onClosed() throws IOException {
                     try {
@@ -167,7 +169,7 @@ Debug.println("newOutputStream: " + e.getMessage());
                         uploader.close();
                     }
                 }
-            };
+            });
         } catch (DbxException e) {
             throw new DropBoxIOException("path: " + path, e);
         }
