@@ -385,8 +385,9 @@ Debug.println("newOutputStream: " + e.getMessage());
                 cache.addEntry(target, patchedEntry);
             }
         } else if (isFolder(sourceEntry)) {
-            // TODO java spec. allows empty folder
-            throw new IsDirectoryException("source can not be a folder: " + source);
+            String targetPathString = toDbxPathString(target);
+            Metadata patchedEntry = client.files().moveV2(toDbxPathString(source), targetPathString).getMetadata();
+            cache.moveEntry(source, target, patchedEntry);
         }
     }
 
