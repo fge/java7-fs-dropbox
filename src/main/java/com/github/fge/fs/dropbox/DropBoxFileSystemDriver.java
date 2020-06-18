@@ -38,7 +38,6 @@ import com.dropbox.core.v2.files.Metadata;
 import com.github.fge.filesystem.driver.ExtendedFileSystemDriverBase;
 import com.github.fge.filesystem.exceptions.IsDirectoryException;
 import com.github.fge.filesystem.provider.FileSystemFactoryProvider;
-import com.github.fge.fs.dropbox.misc.DropBoxIOException;
 
 import vavi.nio.file.Cache;
 import vavi.nio.file.Util;
@@ -105,7 +104,7 @@ public final class DropBoxFileSystemDriver
                     cache.removeEntry(path);
                     throw new NoSuchFileException(path.toString());
                 } catch (DbxException e) {
-                    throw new DropBoxIOException("path: " + path, e);
+                    throw new IOException("path: " + path, e);
                 }
             }
         }
@@ -132,7 +131,7 @@ public final class DropBoxFileSystemDriver
                 }
             });
         } catch (DbxException e) {
-            throw new DropBoxIOException("path: " + path, e);
+            throw new IOException("path: " + path, e);
         }
     }
 
@@ -163,14 +162,14 @@ Debug.println("newOutputStream: " + e.getMessage());
                         FileMetadata newEntry = FileMetadata.class.cast(uploader.finish());
                         cache.addEntry(path, newEntry);
                     } catch (DbxException e) {
-                        throw new DropBoxIOException(e);
+                        throw new IOException(e);
                     } finally {
                         uploader.close();
                     }
                 }
             });
         } catch (DbxException e) {
-            throw new DropBoxIOException("path: " + path, e);
+            throw new IOException("path: " + path, e);
         }
     }
 
@@ -183,7 +182,7 @@ Debug.println("newOutputStream: " + e.getMessage());
         try {
             return Util.newDirectoryStream(getDirectoryEntries(dir), filter);
         } catch (DbxException e) {
-            throw new DropBoxIOException("dir: " + dir, e);
+            throw new IOException("dir: " + dir, e);
         }
     }
 
@@ -196,7 +195,7 @@ Debug.println("newOutputStream: " + e.getMessage());
             FolderMetadata metadata = client.files().createFolderV2(toDbxPathString(dir)).getMetadata();
             cache.addEntry(dir, metadata);
         } catch (DbxException e) {
-            throw new DropBoxIOException("dir: " + dir, e);
+            throw new IOException("dir: " + dir, e);
         }
     }
 
@@ -207,7 +206,7 @@ Debug.println("newOutputStream: " + e.getMessage());
         try {
             removeEntry(path);
         } catch (DbxException e) {
-            throw new DropBoxIOException("path: " + path, e);
+            throw new IOException("path: " + path, e);
         }
     }
 
@@ -226,7 +225,7 @@ Debug.println("newOutputStream: " + e.getMessage());
             }
             copyEntry(source, target);
         } catch (DbxException e) {
-            throw new DropBoxIOException("source: " + source + ", target: " + target, e);
+            throw new IOException("source: " + source + ", target: " + target, e);
         }
     }
 
@@ -268,7 +267,7 @@ Debug.println("newOutputStream: " + e.getMessage());
                 }
             }
         } catch (DbxException e) {
-            throw new DropBoxIOException("source: " + source + ", target: " + target, e);
+            throw new IOException("source: " + source + ", target: " + target, e);
         }
     }
 
