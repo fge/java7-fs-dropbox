@@ -4,7 +4,7 @@
  * Programmed by Naohide Sano
  */
 
-package com.github.fge.filesystem.opts;
+package com.github.fge.fs.dropbox;
 
 import java.nio.file.LinkOption;
 

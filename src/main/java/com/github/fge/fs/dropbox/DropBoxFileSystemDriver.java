@@ -1,4 +1,4 @@
-package com.github.fge.fs.dropbox.driver;
+package com.github.fge.fs.dropbox;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;

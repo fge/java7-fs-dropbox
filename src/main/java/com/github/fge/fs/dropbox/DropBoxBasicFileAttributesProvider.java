@@ -1,4 +1,4 @@
-package com.github.fge.fs.dropbox.attr;
+package com.github.fge.fs.dropbox;
 
 import java.io.IOException;
 import java.nio.file.attribute.BasicFileAttributes;

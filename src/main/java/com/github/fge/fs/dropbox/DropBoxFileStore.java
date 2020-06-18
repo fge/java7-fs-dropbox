@@ -1,4 +1,4 @@
-package com.github.fge.fs.dropbox.filestore;
+package com.github.fge.fs.dropbox;
 
 import com.dropbox.core.DbxException;
 import com.dropbox.core.v2.DbxClientV2;

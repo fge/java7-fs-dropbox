@@ -1,8 +1,6 @@
-package com.github.fge.fs.dropbox.provider;
+package com.github.fge.fs.dropbox;
 
-import com.github.fge.filesystem.opts.DropBoxFileSystemOptionsFactory;
 import com.github.fge.filesystem.provider.FileSystemFactoryProvider;
-import com.github.fge.fs.dropbox.attr.DropBoxFileAttributesFactory;
 
 public final class DropboxFileSystemFactoryProvider
     extends FileSystemFactoryProvider

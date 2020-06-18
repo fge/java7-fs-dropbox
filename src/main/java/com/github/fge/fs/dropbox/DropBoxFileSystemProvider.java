@@ -1,4 +1,4 @@
-package com.github.fge.fs.dropbox.provider;
+package com.github.fge.fs.dropbox;
 
 import com.github.fge.filesystem.provider.FileSystemProviderBase;
 

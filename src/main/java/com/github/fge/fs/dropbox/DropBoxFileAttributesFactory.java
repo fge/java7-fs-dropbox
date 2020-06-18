@@ -1,4 +1,4 @@
-package com.github.fge.fs.dropbox.attr;
+package com.github.fge.fs.dropbox;
 
 import com.dropbox.core.v2.files.Metadata;
 import com.github.fge.filesystem.attributes.FileAttributesFactory;

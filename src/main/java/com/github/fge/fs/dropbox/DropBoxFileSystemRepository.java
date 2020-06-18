@@ -1,4 +1,4 @@
-package com.github.fge.fs.dropbox.provider;
+package com.github.fge.fs.dropbox;
 
 import java.io.IOException;
 import java.net.URI;
@@ -13,8 +13,6 @@ import com.dropbox.core.DbxRequestConfig;
 import com.dropbox.core.v2.DbxClientV2;
 import com.github.fge.filesystem.driver.FileSystemDriver;
 import com.github.fge.filesystem.provider.FileSystemRepositoryBase;
-import com.github.fge.fs.dropbox.driver.DropBoxFileSystemDriver;
-import com.github.fge.fs.dropbox.filestore.DropBoxFileStore;
 
 import vavi.net.auth.UserCredential;
 import vavi.net.auth.oauth2.OAuth2AppCredential;
