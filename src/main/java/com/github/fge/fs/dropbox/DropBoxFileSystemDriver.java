@@ -34,7 +34,6 @@ import com.dropbox.core.v2.DbxClientV2;
 import com.dropbox.core.v2.files.FileMetadata;
 import com.dropbox.core.v2.files.FolderMetadata;
 import com.dropbox.core.v2.files.GetMetadataErrorException;
-import com.dropbox.core.v2.files.ListFolderResult;
 import com.dropbox.core.v2.files.Metadata;
 import com.github.fge.filesystem.driver.ExtendedFileSystemDriverBase;
 import com.github.fge.filesystem.exceptions.IsDirectoryException;
@@ -347,8 +346,7 @@ Debug.println("newOutputStream: " + e.getMessage());
     private void removeEntry(Path path) throws IOException, DbxException {
         Metadata entry = cache.getEntry(path);
         if (isFolder(entry)) {
-            final ListFolderResult list = client.files().listFolder(toDbxPathString(path));
-            if (list.getEntries().size() > 0) {
+            if (getDirectoryEntries(path).size() > 0) {
                 throw new DirectoryNotEmptyException(path.toString());
             }
         }
