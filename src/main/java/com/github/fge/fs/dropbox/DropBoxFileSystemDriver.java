@@ -386,6 +386,7 @@ Debug.println("newOutputStream: " + e.getMessage());
         } else if (isFolder(sourceEntry)) {
             String targetPathString = toDbxPathString(target);
             Metadata patchedEntry = client.files().moveV2(toDbxPathString(source), targetPathString).getMetadata();
+//Debug.println(patchedEntry.getName() + ": " + patchedEntry.getPathDisplay());
             cache.moveEntry(source, target, patchedEntry);
         }
     }
