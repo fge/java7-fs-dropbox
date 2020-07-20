@@ -259,7 +259,7 @@ Debug.println("newOutputStream: " + e.getMessage());
                     }
                 }
             } else {
-                if (source.getParent().equals(target.getParent())) {
+                if (source.toAbsolutePath().getParent().equals(target.toAbsolutePath().getParent())) {
                     // rename
                     renameEntry(source, target);
                 } else {
