@@ -11,6 +11,8 @@ public final class DropBoxFileSystemProvider
 
     public static final String ENV_APP_CREDENTIAL = "app_credential";
 
+    public static final String ENV_IGNORE_APPLE_DOUBLE = "ignoreAppleDouble";
+
     public DropBoxFileSystemProvider()
     {
         super(new DropBoxFileSystemRepository());

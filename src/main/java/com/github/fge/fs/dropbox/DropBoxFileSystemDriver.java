@@ -43,6 +43,7 @@ import vavi.nio.file.Cache;
 import vavi.nio.file.Util;
 import vavi.util.Debug;
 
+import static com.github.fge.fs.dropbox.DropBoxFileSystemProvider.ENV_IGNORE_APPLE_DOUBLE;
 import static vavi.nio.file.Util.toPathString;
 
 @ParametersAreNonnullByDefault
@@ -58,7 +59,7 @@ public final class DropBoxFileSystemDriver
     {
         super(fileStore, provider);
         this.client = client;
-        ignoreAppleDouble = (Boolean) ((Map<String, Object>) env).getOrDefault("ignoreAppleDouble", Boolean.FALSE);
+        ignoreAppleDouble = (Boolean) ((Map<String, Object>) env).getOrDefault(ENV_IGNORE_APPLE_DOUBLE, false);
     }
 
     /** */
