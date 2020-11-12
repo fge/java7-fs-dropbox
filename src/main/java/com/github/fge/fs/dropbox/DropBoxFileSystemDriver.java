@@ -17,11 +17,14 @@ import java.nio.file.NotDirectoryException;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.WatchEvent.Kind;
+import java.nio.file.WatchService;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.spi.FileSystemProvider;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
 
 import javax.annotation.Nonnull;
@@ -44,7 +47,10 @@ import vavi.nio.file.Util;
 import vavi.util.Debug;
 
 import static com.github.fge.fs.dropbox.DropBoxFileSystemProvider.ENV_IGNORE_APPLE_DOUBLE;
+import static com.github.fge.fs.dropbox.DropBoxFileSystemProvider.ENV_USE_SYSTEM_WATCHER;
+import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
 import static vavi.nio.file.Util.toPathString;
+
 
 @ParametersAreNonnullByDefault
 public final class DropBoxFileSystemDriver
@@ -53,13 +59,51 @@ public final class DropBoxFileSystemDriver
     private final DbxClientV2 client;
     private boolean ignoreAppleDouble = false;
 
+    private DropBoxWatchService systemWatcher;
+
     @SuppressWarnings("unchecked")
     public DropBoxFileSystemDriver(final FileStore fileStore,
-        final FileSystemFactoryProvider provider, final DbxClientV2 client, final Map<String, ?> env)
-    {
+            final FileSystemFactoryProvider provider, final DbxClientV2 client, final Map<String, ?> env) throws IOException {
         super(fileStore, provider);
         this.client = client;
         ignoreAppleDouble = (Boolean) ((Map<String, Object>) env).getOrDefault(ENV_IGNORE_APPLE_DOUBLE, false);
+        boolean useSystemWatcher = (Boolean) ((Map<String, Object>) env).getOrDefault(ENV_USE_SYSTEM_WATCHER, false);
+
+        if (useSystemWatcher) {
+            systemWatcher = new DropBoxWatchService(client);
+            systemWatcher.setNotificationListener(this::processNotification);
+        }
+    }
+
+    /** for system watcher */
+    private void processNotification(String pathString, Kind<?> kind) {
+        if (ENTRY_DELETE == kind) {
+            try {
+                Path path = cache.getEntry(e -> pathString.equals(e.getPathDisplay()));
+                cache.removeEntry(path);
+            } catch (NoSuchElementException e) {
+Debug.println("NOTIFICATION: already deleted: " + pathString);
+            }
+        } else {
+            try {
+                try {
+                    Path path = cache.getEntry(e -> pathString.equals(e.getPathDisplay()));
+Debug.println("NOTIFICATION: maybe updated: " + path);
+                    cache.removeEntry(path);
+                    cache.getEntry(path);
+                } catch (NoSuchElementException e) {
+// TODO impl
+//                    Metadata entry = client.files().getMetadata(pathString);
+//                    Path path = parent.resolve(pathString);
+//Debug.println("NOTIFICATION: maybe created: " + path);
+//                    cache.addEntry(path, entry);
+                }
+            } catch (NoSuchElementException e) {
+Debug.println("NOTIFICATION: parent not found: " + e);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     /** */
@@ -313,6 +357,16 @@ Debug.println("newOutputStream: " + e.getMessage());
         throws IOException
     {
         return cache.getEntry(path);
+    }
+
+    @Nonnull
+    @Override
+    public WatchService newWatchService() {
+        try {
+            return new DropBoxWatchService(client);
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     /** */
