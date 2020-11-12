@@ -17,7 +17,7 @@
 
   <properties>
     <vavi-nio-file.groupId>com.github.umjammer</vavi-nio-file.groupId>
-    <vavi-nio-file.version>0.0.12</vavi-nio-file.version>
+    <vavi-nio-file.version>0.0.13</vavi-nio-file.version>
   </properties>
 
   <profiles>
@@ -124,25 +124,37 @@
     <dependency>
       <groupId>com.dropbox.core</groupId>
       <artifactId>dropbox-core-sdk</artifactId>
-      <version>3.1.3</version>
+      <version>3.1.4</version>
     </dependency>
 
     <dependency>
       <groupId>com.github.umjammer</groupId>
       <artifactId>java7-fs-base</artifactId>
-      <version>0.0.10v</version>
+      <version>0.0.11v</version>
     </dependency>
 
     <dependency>
       <groupId>com.github.umjammer.vavi-net-auth</groupId>
       <artifactId>vavi-net-auth-dropbox</artifactId>
-      <version>0.1.2</version>
+      <version>0.1.3</version>
+    </dependency>
+
+    <dependency>
+      <groupId>vavi</groupId>
+      <artifactId>vavi-nio-file-commons</artifactId>
+      <version>0.1.7-SNAPSHOT</version>
     </dependency>
 
     <dependency>
       <groupId>${vavi-nio-file.groupId}</groupId>
       <artifactId>vavi-nio-file</artifactId>
       <version>${vavi-nio-file.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.eclipse.jetty.websocket</groupId>
+      <artifactId>javax-websocket-client-impl</artifactId>
+      <version>9.4.30.v20200611</version>
     </dependency>
 
     <dependency>
