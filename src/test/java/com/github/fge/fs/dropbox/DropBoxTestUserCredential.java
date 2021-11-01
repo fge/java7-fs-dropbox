@@ -14,7 +14,7 @@ import vavi.util.properties.annotation.PropsEntity;
 /**
  * DropBoxTestUserCredential.
  * <p>
- * environment variable
+ * uses environment variables instead of "~/vavifuse/credential.properties"
  * <ul>
  * <li> TEST_PASSWORD
  * </ul>
@@ -23,7 +23,7 @@ import vavi.util.properties.annotation.PropsEntity;
  * @version 0.00 2020/05/02 umjammer initial version <br>
  */
 @PropsEntity
-public class DropBoxTestUserCredential extends BaseLocalUserCredential {
+public final class DropBoxTestUserCredential extends BaseLocalUserCredential {
 
     /** */
     @Env(name = "TEST_PASSWORD")

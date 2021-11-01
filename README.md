@@ -34,9 +34,11 @@ Next, prepare 2 property files.
 
 ```shell
 $ cat ${HOME}/.vavifuse/dropbox.properties
+dropbox.applicationName=your_application_name
 dropbox.clientId=your_client_id
 dropbox.clientSecret=your_client_secret
 dropbox.redirectUrl=http://localhost:30000
+dropbox.scopes=files.content.write
 ```
 
  * user credential

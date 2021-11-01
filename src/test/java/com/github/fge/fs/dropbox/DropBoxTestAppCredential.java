@@ -15,7 +15,7 @@ import vavi.util.properties.annotation.PropsEntity;
 /**
  * DropBoxWebAppCredential.
  * <p>
- * environment variables
+ * uses environment variables instead of "~/vavifuse/box.properties"
  * <ul>
  * <li> TEST_CLIENT_ID
  * <li> TEST_CLIENT_SECRET
@@ -29,16 +29,20 @@ import vavi.util.properties.annotation.PropsEntity;
 @PropsEntity
 public class DropBoxTestAppCredential extends BaseLocalAppCredential implements OAuth2AppCredential {
 
+    @Env(name = "TEST_APPLICATION_NAME")
+    private String applicationName;
     @Env(name = "TEST_CLIENT_ID")
-    private String clientId;
+    private transient String clientId;
     @Env(name = "TEST_CLIENT_SECRET")
     private transient String clientSecret;
     @Env(name = "TEST_REDIRECT_URL")
     private String redirectUrl;
+    @Env(name = "TEST_SCOPES")
+    private String scope;
 
     @Override
     public String getApplicationName() {
-        return "vavi-apps-fuse";
+        return applicationName;
     }
 
     @Override
