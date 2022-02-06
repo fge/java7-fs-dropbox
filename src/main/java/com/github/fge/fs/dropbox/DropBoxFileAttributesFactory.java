@@ -1,10 +1,10 @@
 package com.github.fge.fs.dropbox;
 
 import com.dropbox.core.v2.files.Metadata;
-import com.github.fge.filesystem.attributes.FileAttributesFactory;
+import com.github.fge.filesystem.driver.ExtendedFileSystemDriverBase.ExtendsdFileAttributesFactory;
 
 public final class DropBoxFileAttributesFactory
-    extends FileAttributesFactory
+    extends ExtendsdFileAttributesFactory
 {
     public DropBoxFileAttributesFactory()
     {
