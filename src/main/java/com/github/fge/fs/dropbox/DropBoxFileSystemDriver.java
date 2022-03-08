@@ -9,8 +9,11 @@ import java.nio.file.CopyOption;
 import java.nio.file.FileStore;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
+import java.nio.file.WatchEvent.Kind;
+import java.nio.file.WatchService;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -27,7 +30,10 @@ import com.github.fge.filesystem.driver.CachedFileSystemDriver;
 import com.github.fge.filesystem.provider.FileSystemFactoryProvider;
 
 import vavi.nio.file.Util;
+import vavi.util.Debug;
 
+import static com.github.fge.fs.dropbox.DropBoxFileSystemProvider.ENV_USE_SYSTEM_WATCHER;
+import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
 import static vavi.nio.file.Util.toPathString;
 
 
@@ -37,15 +43,54 @@ public final class DropBoxFileSystemDriver
 
     private DbxClientV2 client;
 
+    private DropBoxWatchService systemWatcher;
+
     public DropBoxFileSystemDriver(
             FileStore fileStore,
             FileSystemFactoryProvider provider,
             DbxClientV2 client,
-            Map<String, ?> env) {
-
+            Map<String, ?> env) throws IOException {
         super(fileStore, provider);
         this.client = client;
         setEnv(env);
+
+        @SuppressWarnings("unchecked")
+        boolean useSystemWatcher = (Boolean) ((Map<String, Object>) env).getOrDefault(ENV_USE_SYSTEM_WATCHER, false);
+        if (useSystemWatcher) {
+            systemWatcher = new DropBoxWatchService(client);
+            systemWatcher.setNotificationListener(this::processNotification);
+        }
+    }
+
+    /** for system watcher */
+    private void processNotification(String pathString, Kind<?> kind) {
+        if (ENTRY_DELETE == kind) {
+            try {
+                Path path = cache.getEntry(e -> pathString.equals(e.getPathDisplay()));
+                cache.removeEntry(path);
+            } catch (NoSuchElementException e) {
+Debug.println("NOTIFICATION: already deleted: " + pathString);
+            }
+        } else {
+            try {
+                try {
+                    Path path = cache.getEntry(e -> pathString.equals(e.getPathDisplay()));
+Debug.println("NOTIFICATION: maybe updated: " + path);
+                    cache.removeEntry(path);
+                    cache.getEntry(path);
+                } catch (NoSuchElementException e) {
+// TODO impl
+//                    Metadata entry = client.files().getMetadata(pathString);
+//                    Path path = parent.resolve(pathString);
+//Debug.println("NOTIFICATION: maybe created: " + path);
+//                    cache.addEntry(path, entry);
+                }
+            } catch (NoSuchElementException e) {
+Debug.println("NOTIFICATION: parent not found: " + e);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     /** */
@@ -187,6 +232,15 @@ public final class DropBoxFileSystemDriver
             return client.files().moveV2(toDbxPathString(source), toDbxPathString(target)).getMetadata();
         } catch (DbxException e) {
             throw new IOException("path: " + source + ", " + target, e);
+        }
+    }
+
+    @Override
+    public WatchService newWatchService() {
+        try {
+            return new DropBoxWatchService(client);
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
         }
     }
 }
