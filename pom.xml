@@ -3,7 +3,7 @@
 
   <groupId>com.github.fge</groupId>
   <artifactId>java7-fs-dropbox</artifactId>
-  <version>0.0.17v</version>
+  <version>0.0.18v-SNAPSHOT</version>
 
   <name>java7-fs-dropbox</name>
   <description>A Java 7 FileSystem implementation over DropBox</description>
@@ -16,8 +16,8 @@
   </issueManagement>
 
   <properties>
-    <vavi-nio-file.groupId>com.github.umjammer</vavi-nio-file.groupId>
-    <vavi-nio-file.version>0.0.12</vavi-nio-file.version>
+    <vavi-nio-file.groupId>vavi</vavi-nio-file.groupId> <!-- com.github.umjammer -->
+    <vavi-nio-file.version>0.0.14-SNAPSHOT</vavi-nio-file.version>
   </properties>
 
   <profiles>
@@ -120,7 +120,7 @@
   </repositories>
 
   <dependencyManagement>
-  <dependencies>
+    <dependencies>
       <dependency>
         <groupId>org.junit</groupId>
         <artifactId>junit-bom</artifactId>
@@ -131,6 +131,7 @@
     </dependencies>
   </dependencyManagement>
 
+  <dependencies>
     <dependency>
       <groupId>com.dropbox.core</groupId>
       <artifactId>dropbox-core-sdk</artifactId>
@@ -140,13 +141,13 @@
     <dependency>
       <groupId>com.github.umjammer</groupId>
       <artifactId>java7-fs-base</artifactId>
-      <version>0.0.10v</version>
+      <version>0.0.12v</version>
     </dependency>
 
     <dependency>
-      <groupId>com.github.umjammer.vavi-net-auth</groupId>
+      <groupId>vavi</groupId> <!-- com.github.umjammer.vavi-net-auth -->
       <artifactId>vavi-net-auth-dropbox</artifactId>
-      <version>0.1.2</version>
+      <version>0.1.4-SNAPSHOT</version>
     </dependency>
 
     <dependency>
