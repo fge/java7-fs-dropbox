@@ -16,8 +16,8 @@
   </issueManagement>
 
   <properties>
-    <vavi-nio-file.groupId>vavi</vavi-nio-file.groupId> <!-- com.github.umjammer -->
-    <vavi-nio-file.version>0.0.14-SNAPSHOT</vavi-nio-file.version>
+    <vavi-nio-file.groupId>com.github.umjammer</vavi-nio-file.groupId>
+    <vavi-nio-file.version>0.0.13</vavi-nio-file.version>
   </properties>
 
   <profiles>
@@ -145,15 +145,15 @@
     </dependency>
 
     <dependency>
-      <groupId>vavi</groupId> <!-- com.github.umjammer.vavi-net-auth -->
+      <groupId>com.github.umjammer.vavi-net-auth</groupId>
       <artifactId>vavi-net-auth-dropbox</artifactId>
-      <version>0.1.4-SNAPSHOT</version>
+      <version>0.1.4</version>
     </dependency>
 
     <dependency>
-      <groupId>vavi</groupId>
+      <groupId>com.github.umjammer.vavi-apps-fuse</groupId>
       <artifactId>vavi-nio-file-commons</artifactId>
-      <version>0.1.7-SNAPSHOT</version>
+      <version>0.1.7</version>
     </dependency>
 
     <dependency>
